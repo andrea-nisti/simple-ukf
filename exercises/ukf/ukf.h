@@ -9,6 +9,15 @@
 
 #include <Eigen/Dense>
 
+/* TODO:
+- fix naming convention
+- add util for covariance prediction
+- refactor the general architecture: lots of repeted code
+
+impovement
+- cache last fusion timestamp
+*/
+
 constexpr double delta_t = 0.1f;
 
 template <typename ProcessModel>
@@ -45,13 +54,12 @@ class UKF
         current_predicted_sigma_points_ = SigmaPointPrediction<ProcessModel>(augmented_sigma_points, delta_t);
 
         // define spreading parameter and generate weights
-        constexpr double lambda = 3 - ProcessModel::n_aug;
-        const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda);
+        const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
         constexpr int n_sigma_points = SigmaMatrixAugmented::ColsAtCompileTime;
 
         // create vector for predicted state.
         StateVector_t predicted_state_mean{};
-        PredictStateMeanFromSigmaPoints(weights, current_predicted_sigma_points_, predicted_state_mean);
+        PredictMeanFromSigmaPoints(weights, current_predicted_sigma_points_, predicted_state_mean);
 
         // create covariance matrix for prediction
         StateCovMatrix_t P{};
@@ -74,109 +82,113 @@ class UKF
         P_pred = P;
     }
 
+    // clang-format off
     template <typename MeasurementModel>
-    void PredictMeasurement(
-        typename MeasurementModel::MeasurementVector& z_out,
-        typename MeasurementModel::MeasurementCovMatrix& S_out,
-        Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>& predicted_sigma_points)
+    Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime> 
+    PredictMeasurement(typename MeasurementModel::MeasurementVector& measure_out, typename MeasurementModel::MeasurementCovMatrix& S_out)
+    // clang-format on
     {
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
+        using PredictedMeasurementSigmaPoints_t =
+            typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
 
         // define spreading parameter and generate weights
-        constexpr double lambda = 3 - ProcessModel::n_aug;
-        const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda);
+        constexpr double lambda_ = 3 - ProcessModel::n_aug;
+        const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
         constexpr int n_sigma_points = PredictedSigmaMatrix_t::ColsAtCompileTime;
 
         // mean predicted measurement
         MeasurementVector_t predicted_measurement{};
+        PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
 
+        // TODO: this can be fused with process sigma prediction
         // transform sigma points into measurement space
         for (int i = 0; i < n_sigma_points; ++i)
         {
             auto predicted_measure = MeasurementModel{}.PredictMeasure(current_predicted_sigma_points_.col(i), delta_t);
 
             // measurement model
-            predicted_sigma_points(0, i) = predicted_measure(0);  // r
-            predicted_sigma_points(1, i) = predicted_measure(1);  // phi
-            predicted_sigma_points(2, i) = predicted_measure(2);  // r_dot
+            for (int state_dim = 0; state_dim < MeasurementModel::n_z; ++state_dim)
+                predicted_measurement_sigma_points(state_dim, i) = predicted_measure(state_dim);
         }
 
         // mean predicted measurement
-        PredictStateMeanFromSigmaPoints(weights, predicted_sigma_points, predicted_measurement);
+        PredictMeanFromSigmaPoints(weights, predicted_measurement_sigma_points, predicted_measurement);
 
         // innovation covariance matrix S
         typename MeasurementModel::MeasurementCovMatrix S{};
         for (int i = 0; i < n_sigma_points; ++i)
         {  // 2n+1 simga points
             // residual
-            MeasurementVector_t z_diff = predicted_sigma_points.col(i) - predicted_measurement;
+            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - predicted_measurement;
 
-            MeasurementModel::AdjustMeasure(z_diff);
+            MeasurementModel::AdjustMeasure(measure_diff);
 
-            S = S + weights(i) * z_diff * z_diff.transpose();
+            S = S + weights(i) * measure_diff * measure_diff.transpose();
         }
 
         // add measurement noise covariance matrix
         S = S + MeasurementModel::measurement_cov_matrix;
 
         // write result
-        z_out = predicted_measurement;
+        measure_out = predicted_measurement;
         S_out = S;
+
+        return predicted_measurement_sigma_points;
     }
 
     template <typename MeasurementModel>
     void UpdateState(typename MeasurementModel::MeasurementVector measure,
-                     Eigen::VectorXd& x_out,
-                     Eigen::MatrixXd& P_out)
+                     typename ProcessModel::StateVector& x_out,
+                     typename ProcessModel::StateCovMatrix& P_out)
     {
-        // using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
+        using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
+        using PredictedMeasurementSigmaPoints_t =
+            typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
+        // create matrix for cross correlation Tc, predicted measurement measure_out and pred covariance S_out
+        Eigen::Matrix<double, ProcessModel::n_x, MeasurementModel::n_z> cross_correlation_matrix{};
+        RadarModel::MeasurementVector measure_pred{};
+        RadarModel::MeasurementCovMatrix S{};
 
-        // // create matrix for cross correlation Tc, predicted measurement z_out and pred covariance S_out
-        // Eigen::Matrix<double, StateVector_t::n_x, MeasurementVector_t::n_z> Tc{};
-        // RadarModel::MeasurementVector z_pred{};
-        // RadarModel::MeasurementCovMatrix{};
+        const PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points =
+            PredictMeasurement<MeasurementModel>(measure_pred, S);
 
-        // PredictMeasurement<MeasurementModel>(z_pred, S_out);
+        // calculate cross correlation matrix
+        // this computation gives the correlation between real measure and predicted on
+        const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
+        for (int i = 0; i < 2 * ProcessModel::n_aug + 1; ++i)
+        {
+            // residual
+            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measure_pred;
+            MeasurementModel::AdjustMeasure(measure_diff);
 
-        // // calculate cross correlation matrix
-        // for (int i = 0; i < 2 * n_aug + 1; ++i)
-        // {  // 2n+1 simga points
-        //     // residual
-        //     MeasurementVector_t z_diff = Zsig.col(i) - z_pred;
-        //     // angle normalization
-        //     MeasurementModel::AdjustMeasure(z_diff);
+            StateVector_t x_diff = current_predicted_sigma_points_.col(i) - current_state_;
+            ProcessModel::AdjustState(x_diff);
 
-        //     StateVector_t x_diff = Xsig_pred.col(i) - x;
-        //     // angle normalization
-        //     while (x_diff(3) > M_PI)
-        //         x_diff(3) -= 2. * M_PI;
-        //     while (x_diff(3) < -M_PI)
-        //         x_diff(3) += 2. * M_PI;
+            cross_correlation_matrix = cross_correlation_matrix + weights(i) * x_diff * measure_diff.transpose();
+        }
 
-        //     Tc = Tc + weights(i) * x_diff * z_diff.transpose();
-        // }
+        // Kalman gain K;
+        MatrixXd K = cross_correlation_matrix * S.inverse();
 
-        // // Kalman gain K;
-        // MatrixXd K = Tc * S.inverse();
+        // residual
+        MeasurementVector_t measure_diff = measure - measure_pred;
 
-        // // residual
-        // VectorXd z_diff = z - z_pred;
+        // angle normalization
+        MeasurementModel::AdjustMeasure(measure_diff);
 
-        // // angle normalization
-        // while (z_diff(1) > M_PI)
-        //     z_diff(1) -= 2. * M_PI;
-        // while (z_diff(1) < -M_PI)
-        //     z_diff(1) += 2. * M_PI;
-
-        // // update state mean and covariance matrix
-        // x = x + K * z_diff;
-        // P = P - K * S * K.transpose();
+        // update state mean and covariance matrix
+        current_state_ = current_state_ + K * measure_diff;
+        current_cov_ = current_cov_ - K * S * K.transpose();
+        x_out = current_state_;
+        P_out = current_cov_;
     }
 
   private:
+    static constexpr double lambda_ = 3 - ProcessModel::n_aug;
     StateVector_t current_state_{};
     StateCovMatrix_t current_cov_{};
     PredictedSigmaMatrix_t current_predicted_sigma_points_{};
 };
 
-#endif // EXERCISES_UKF_UKF_H
+#endif  // EXERCISES_UKF_UKF_H

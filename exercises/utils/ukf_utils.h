@@ -82,6 +82,7 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n_x>& state_mean,
     return GenerateSigmaPoints(state_aug, P_aug);
 }
 
+// TODO: this can be fused with measurement sigma prediction
 template <typename PredictionModel, typename InputSigmaMatrix>
 typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
                                                                     double delta_t)
@@ -98,7 +99,7 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
         StateVector_t predicted_sigma_state = PredictionModel{}.PredictState(prev_sigma_state, delta_t);
 
         // Fill predicted points matrix
-        for (int state_index = 0; state_index < StateVector_t::RowsAtCompileTime; ++state_index)
+        for (int state_index = 0; state_index < PredictionModel::n_x; ++state_index)
         {
             predicted_points(state_index, i) = predicted_sigma_state(state_index);
         }
@@ -125,7 +126,7 @@ constexpr auto GenerateWeights(double lambda)
 }
 
 template <int n_state, typename SigmaMatrix, int n_sigma_points>
-void PredictStateMeanFromSigmaPoints(const Eigen::Vector<double, n_sigma_points>& weights,
+void PredictMeanFromSigmaPoints(const Eigen::Vector<double, n_sigma_points>& weights,
                                      const SigmaMatrix& current_predicted_sigma_points,
                                      Eigen::Vector<double, n_state>& computed_mean)
 {

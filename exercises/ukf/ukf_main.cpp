@@ -19,7 +19,7 @@ int main()
     CRTVModel::StateVector x_out{};
     CRTVModel::StateCovMatrix P_out{};
     instance.PredictMeanAndCovariance(x_out, P_out);
-    
+
     std::cout << "Predicted state" << std::endl;
     std::cout << x_out << std::endl;
     std::cout << "Predicted covariance matrix" << std::endl;
@@ -30,13 +30,23 @@ int main()
 
     RadarModel::MeasurementVector z_out{};
     RadarModel::MeasurementCovMatrix S_out{};
-    PredictedMeasurementSigmaMatrix predicted_measurement_sigma_matrix{};
-    instance.PredictMeasurement<RadarModel>(z_out, S_out, predicted_measurement_sigma_matrix);
+    PredictedMeasurementSigmaMatrix predicted_measurement_sigma_matrix =
+        instance.PredictMeasurement<RadarModel>(z_out, S_out);
 
     std::cout << "Predicted measurement" << std::endl;
     std::cout << z_out << std::endl;
     std::cout << "Measurement covariance matrix" << std::endl;
     std::cout << S_out << std::endl;
 
+    // create example vector for mean predicted measurement
+    RadarModel::MeasurementVector z{};
+    z << 5.9214,  // rho in m
+        0.2187,   // phi in rad
+        2.0062;   // rho_dot in m/s
+    instance.UpdateState<RadarModel>(z, x_out, P_out);
+    std::cout << "Updated state" << std::endl;
+    std::cout << x_out << std::endl;
+    std::cout << "Updated covariance matrix" << std::endl;
+    std::cout << P_out << std::endl;
     return 0;
 }

@@ -9,6 +9,7 @@ class CRTVModel
     static constexpr int n_x = 5;
     static constexpr int n_aug = 7;
     static constexpr int n_process_noise = 2;
+    static constexpr int n_sigma_points = 2;
 
     using StateVector = Eigen::Vector<double, n_x>;
     using StateVectorAugmented = Eigen::Vector<double, n_aug>;
@@ -83,4 +84,4 @@ class CRTVModel
     }
 };
 
-#endif  // EXERCISES_MODELS_CRTV_MODEL_H
+#endif // EXERCISES_MODELS_CRTV_MODEL_H
