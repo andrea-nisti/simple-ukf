@@ -4,8 +4,8 @@
 #include <iostream>
 
 #include "exercises/models/models.h"
-#include "exercises/utils/ukf_utils.h"
 #include "ukf.h"
+#include "ukf_utils.h"
 
 #include <Eigen/Dense>
 
@@ -17,8 +17,6 @@
 impovement
 - cache last fusion timestamp
 */
-
-constexpr double delta_t = 0.1f;
 
 template <typename ProcessModel>
 class UKF
@@ -42,7 +40,7 @@ class UKF
         current_cov_ = init_cov_matrix;
     }
 
-    void PredictMeanAndCovariance(StateVector_t& x_pred, StateCovMatrix_t& P_pred)
+    void PredictMeanAndCovariance(const double delta_t)
     {
         using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
         using ProcessNoiseVector = Eigen::Vector<double, ProcessModel::n_process_noise>;
@@ -57,36 +55,15 @@ class UKF
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
         constexpr int n_sigma_points = SigmaMatrixAugmented::ColsAtCompileTime;
 
-        // create vector for predicted state.
-        StateVector_t predicted_state_mean{};
-        PredictMeanFromSigmaPoints(weights, current_predicted_sigma_points_, predicted_state_mean);
-
-        // create covariance matrix for prediction
-        StateCovMatrix_t P{};
-
-        // predicted state covariance matrix
-        P.fill(0.0);
-        for (int i = 0; i < n_sigma_points; ++i)
-        {
-            // state difference
-            StateVector_t x_diff = current_predicted_sigma_points_.col(i) - predicted_state_mean;
-
-            // Adjust state values (e.g. angles wrapping)
-            ProcessModel::AdjustState(x_diff);
-
-            P = P + weights(i) * x_diff * x_diff.transpose();
-        }
-
-        // write result
-        x_pred = predicted_state_mean;
-        P_pred = P;
+        current_state_ = ComputeMeanFromSigmaPoints(weights, current_predicted_sigma_points_);
+        current_cov_ = ComputeCovarianceFromSigmaPoints<ProcessModel::n_x>(
+            weights, current_predicted_sigma_points_, current_state_, &ProcessModel::AdjustState);
     }
 
-    // clang-format off
     template <typename MeasurementModel>
-    Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime> 
-    PredictMeasurement(typename MeasurementModel::MeasurementVector& measure_out, typename MeasurementModel::MeasurementCovMatrix& S_out)
-    // clang-format on
+    Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime> PredictMeasurement(
+        typename MeasurementModel::MeasurementVector& measure_out,
+        typename MeasurementModel::MeasurementCovMatrix& S_out)
     {
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
         using PredictedMeasurementSigmaPoints_t =
@@ -98,14 +75,13 @@ class UKF
         constexpr int n_sigma_points = PredictedSigmaMatrix_t::ColsAtCompileTime;
 
         // mean predicted measurement
-        MeasurementVector_t predicted_measurement{};
         PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
 
         // TODO: this can be fused with process sigma prediction
         // transform sigma points into measurement space
         for (int i = 0; i < n_sigma_points; ++i)
         {
-            auto predicted_measure = MeasurementModel{}.PredictMeasure(current_predicted_sigma_points_.col(i), delta_t);
+            auto predicted_measure = MeasurementModel{}.PredictMeasure(current_predicted_sigma_points_.col(i));
 
             // measurement model
             for (int state_dim = 0; state_dim < MeasurementModel::n_z; ++state_dim)
@@ -113,19 +89,11 @@ class UKF
         }
 
         // mean predicted measurement
-        PredictMeanFromSigmaPoints(weights, predicted_measurement_sigma_points, predicted_measurement);
+        MeasurementVector_t predicted_measurement =
+            ComputeMeanFromSigmaPoints(weights, predicted_measurement_sigma_points);
 
-        // innovation covariance matrix S
-        typename MeasurementModel::MeasurementCovMatrix S{};
-        for (int i = 0; i < n_sigma_points; ++i)
-        {  // 2n+1 simga points
-            // residual
-            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - predicted_measurement;
-
-            MeasurementModel::AdjustMeasure(measure_diff);
-
-            S = S + weights(i) * measure_diff * measure_diff.transpose();
-        }
+        typename MeasurementModel::MeasurementCovMatrix S = ComputeCovarianceFromSigmaPoints<MeasurementModel::n_z>(
+            weights, predicted_measurement_sigma_points, predicted_measurement, &MeasurementModel::AdjustMeasure);
 
         // add measurement noise covariance matrix
         S = S + MeasurementModel::measurement_cov_matrix;
@@ -147,6 +115,7 @@ class UKF
             typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
         // create matrix for cross correlation Tc, predicted measurement measure_out and pred covariance S_out
         Eigen::Matrix<double, ProcessModel::n_x, MeasurementModel::n_z> cross_correlation_matrix{};
+        cross_correlation_matrix.fill(0.0f);
         RadarModel::MeasurementVector measure_pred{};
         RadarModel::MeasurementCovMatrix S{};
 
@@ -183,6 +152,10 @@ class UKF
         x_out = current_state_;
         P_out = current_cov_;
     }
+
+    const PredictedSigmaMatrix_t& GetCurrentPredictedSigmaMatrix() const { return current_predicted_sigma_points_; }
+    const StateVector_t& GetCurrentStateVector() const { return current_state_; }
+    const StateCovMatrix_t& GetCurrentCovarianceMatrix() const { return current_cov_; }
 
   private:
     static constexpr double lambda_ = 3 - ProcessModel::n_aug;

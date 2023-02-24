@@ -9,7 +9,18 @@ cc_library(
     ],
     hdrs = ["ukf.h"],
     deps = [
-       "//exercises/utils:ukf_utils",
+       ":ukf_utils",
+    ]
+)
+
+cc_library(
+    name = "ukf_utils",
+    srcs = [
+        "ukf_utils.cpp",
+        "ukf_utils.h"
+    ],
+    hdrs = ["ukf_utils.h"],
+    deps = [
        "@eigen_repo//:eigen"
     ]
 )

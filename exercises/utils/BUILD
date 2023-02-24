@@ -14,18 +14,6 @@ cc_library(
     ]
 )
 
-cc_library(
-    name = "ukf_utils",
-    srcs = [
-        "ukf_utils.cpp",
-        "ukf_utils.h"
-    ],
-    hdrs = ["ukf_utils.h"],
-    deps = [
-       "@eigen_repo//:eigen"
-    ]
-)
-
 cc_binary(
     name = "jacobian_main",
     srcs = [
@@ -45,16 +33,5 @@ cc_binary(
     ],
     deps = [
        ":utils"
-    ],
-)
-
-cc_binary(
-    name = "ukf_main",
-    srcs = [
-        "ukf_main.cpp",
-    ],
-    deps = [
-       ":ukf_utils",
-       "//exercises/models:prediction_models"
     ],
 )

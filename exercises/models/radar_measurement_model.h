@@ -32,7 +32,7 @@ class RadarModel
     using PredictedSigmaMatrix = Eigen::Matrix<double, n_z, 2 * n_z + 1>;
 
     template <typename StateVector>
-    MeasurementVector PredictMeasure(const StateVector& current_state, const double delta_t)
+    MeasurementVector PredictMeasure(const StateVector& current_state)
     {
         static_assert(StateVector::RowsAtCompileTime >= CRTVModel::n_x,
                       "The radar model works for CRTV normal or augmented state");

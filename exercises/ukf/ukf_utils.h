@@ -1,5 +1,5 @@
-#ifndef EXERCISES_UTILS_UKF_UTILS_H
-#define EXERCISES_UTILS_UKF_UTILS_H
+#ifndef EXERCISES_UKF_UKF_UTILS_H
+#define EXERCISES_UKF_UKF_UTILS_H
 
 #include <iostream>
 
@@ -75,6 +75,7 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n_x>& state_mean,
     // set augmented dimension
     constexpr int n_aug = n_x + process_noise.RowsAtCompileTime;
     Eigen::Vector<double, n_aug> state_aug{};
+    state_aug.fill(0.0);
     // create augmented covariance matrix
     Eigen::Matrix<double, n_aug, n_aug> P_aug;
 
@@ -125,16 +126,43 @@ constexpr auto GenerateWeights(double lambda)
     return weights;
 }
 
-template <int n_state, typename SigmaMatrix, int n_sigma_points>
-void PredictMeanFromSigmaPoints(const Eigen::Vector<double, n_sigma_points>& weights,
-                                     const SigmaMatrix& current_predicted_sigma_points,
-                                     Eigen::Vector<double, n_state>& computed_mean)
+template <int n_state, int n_sigma_points>
+Eigen::Vector<double, n_state> ComputeMeanFromSigmaPoints(
+    const Eigen::Vector<double, n_sigma_points>& weights,
+    const Eigen::Matrix<double, n_state, n_sigma_points>& current_predicted_sigma_points)
 {
+    Eigen::Vector<double, n_state> computed_mean{};
     computed_mean.fill(0.0);
     for (int i = 0; i < n_sigma_points; ++i)
     {  // iterate over sigma points
         computed_mean = computed_mean + weights(i) * current_predicted_sigma_points.col(i);
     }
+
+    return computed_mean;
 }
 
-#endif  // EXERCISES_UTILS_UKF_UTILS_H
+template <int n_state, int n_sigma_points>
+Eigen::Matrix<double, n_state, n_state> ComputeCovarianceFromSigmaPoints(
+    const Eigen::Vector<double, n_sigma_points>& weights,
+    const Eigen::Matrix<double, n_state, n_sigma_points>& current_predicted_sigma_points,
+    const Eigen::Vector<double, n_state> predicted_state_mean,
+    std::function<void( Eigen::Vector<double, n_state>&)> difference_adjuster = nullptr)
+{
+    // create covariance matrix for prediction
+    Eigen::Matrix<double, n_state, n_state> P{};
+    P.fill(0.0);
+    for (int i = 0; i < n_sigma_points; ++i)
+    {
+        // state difference
+        Eigen::Vector<double, n_state> diff = current_predicted_sigma_points.col(i) - predicted_state_mean;
+
+        // Adjust state values (e.g. angles wrapping)
+        if (difference_adjuster)
+            difference_adjuster(diff);
+
+        P = P + weights(i) * diff * diff.transpose();
+    }
+    return P;
+}
+
+#endif  // EXERCISES_UKF_UKF_UTILS_H

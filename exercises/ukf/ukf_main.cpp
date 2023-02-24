@@ -23,15 +23,15 @@ int main()
 
     CRTVModel::StateVector x_out{};
     CRTVModel::StateCovMatrix P_out{};
-    instance.PredictMeanAndCovariance(x_out, P_out);
+    instance.PredictMeanAndCovariance(0.1f);
 
     std::cout << "Predicted state" << std::endl;
-    std::cout << x_out << std::endl;
+    std::cout << instance.GetCurrentStateVector() << std::endl;
     std::cout << "Predicted covariance matrix" << std::endl;
-    std::cout << P_out << std::endl;
+    std::cout << instance.GetCurrentCovarianceMatrix() << std::endl;
+    std::cout << "Predicted sigma matrix" << std::endl;
 
-    RadarModel::MeasurementVector z_out{};
-    RadarModel::MeasurementCovMatrix S_out{};
+    std::cout << instance.GetCurrentPredictedSigmaMatrix() << std::endl;
 
     // using PredictedMeasurementSigmaMatrix =
     //     Eigen::Matrix<double, RadarModel::n_z, UKF<CRTVModel>::PredictedSigmaMatrix_t::ColsAtCompileTime>;
@@ -54,6 +54,6 @@ int main()
     std::cout << x_out << std::endl;
     std::cout << "Updated covariance matrix" << std::endl;
     std::cout << P_out << std::endl;
-   
+
     return 0;
 }
