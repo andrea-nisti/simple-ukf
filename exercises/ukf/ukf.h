@@ -11,7 +11,6 @@
 
 /* TODO:
 - fix naming convention
-- add util for covariance prediction
 - refactor the general architecture: lots of repeted code
 
 impovement
