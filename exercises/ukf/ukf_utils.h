@@ -141,16 +141,17 @@ Eigen::Vector<double, n_state> ComputeMeanFromSigmaPoints(
     return computed_mean;
 }
 
-template <int n_state, int n_sigma_points>
+template <int n_state, int n_sigma_points, typename DifferenceAdjuster>
 Eigen::Matrix<double, n_state, n_state> ComputeCovarianceFromSigmaPoints(
     const Eigen::Vector<double, n_sigma_points>& weights,
     const Eigen::Matrix<double, n_state, n_sigma_points>& current_predicted_sigma_points,
-    const Eigen::Vector<double, n_state> predicted_state_mean,
-    std::function<void( Eigen::Vector<double, n_state>&)> difference_adjuster = nullptr)
+    const Eigen::Vector<double, n_state>& predicted_state_mean,
+    const DifferenceAdjuster difference_adjuster = nullptr)
 {
     // create covariance matrix for prediction
     Eigen::Matrix<double, n_state, n_state> P{};
     P.fill(0.0);
+
     for (int i = 0; i < n_sigma_points; ++i)
     {
         // state difference

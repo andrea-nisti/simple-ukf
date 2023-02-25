@@ -51,12 +51,10 @@ class UKF
         // Predict sigma points
         current_predicted_sigma_points_ = SigmaPointPrediction<ProcessModel>(augmented_sigma_points, delta_t);
 
-        // define spreading parameter and generate weights
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
-        constexpr int n_sigma_points = SigmaMatrixAugmented::ColsAtCompileTime;
 
         current_state_ = ComputeMeanFromSigmaPoints(weights, current_predicted_sigma_points_);
-        current_cov_ = ComputeCovarianceFromSigmaPoints<ProcessModel::n_x>(
+        current_cov_ = ComputeCovarianceFromSigmaPoints(
             weights, current_predicted_sigma_points_, current_state_, &ProcessModel::AdjustState);
     }
 
@@ -92,7 +90,7 @@ class UKF
         MeasurementVector_t predicted_measurement =
             ComputeMeanFromSigmaPoints(weights, predicted_measurement_sigma_points);
 
-        typename MeasurementModel::MeasurementCovMatrix S = ComputeCovarianceFromSigmaPoints<MeasurementModel::n_z>(
+        typename MeasurementModel::MeasurementCovMatrix S = ComputeCovarianceFromSigmaPoints(
             weights, predicted_measurement_sigma_points, predicted_measurement, &MeasurementModel::AdjustMeasure);
 
         // add measurement noise covariance matrix
@@ -113,9 +111,11 @@ class UKF
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
         using PredictedMeasurementSigmaPoints_t =
             typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
+
         // create matrix for cross correlation Tc, predicted measurement measure_out and pred covariance S_out
         Eigen::Matrix<double, ProcessModel::n_x, MeasurementModel::n_z> cross_correlation_matrix{};
         cross_correlation_matrix.fill(0.0f);
+
         RadarModel::MeasurementVector measure_pred{};
         RadarModel::MeasurementCovMatrix S{};
 

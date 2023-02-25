@@ -23,9 +23,9 @@ class RadarModel
     using MeasurementCovMatrix = Eigen::Matrix<double, n_z, n_z>;
     inline static const MeasurementCovMatrix measurement_cov_matrix =
         (MeasurementCovMatrix() << 
-         std_radr * std_radr,       0, 0,
-         0,    std_radphi* std_radphi, 0, 
-         0,    0,    std_radrd* std_radrd).finished();
+         std_radr * std_radr,        0, 0,
+         0,    std_radphi * std_radphi, 0, 
+         0,    0,    std_radrd * std_radrd).finished();
     // clang-format on
 
     using MeasurementVector = Eigen::Vector<double, n_z>;
