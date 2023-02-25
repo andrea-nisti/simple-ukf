@@ -13,17 +13,17 @@ constexpr inline double GetLamda(int n_state)
     return 3 - n_state;
 }
 
-template <int n_x, int n_aug, int n_process_noise>
-void AugmentStates(const Eigen::Vector<double, n_x>& state_mean,
-                   const Eigen::Matrix<double, n_x, n_x>& P,
+template <int n, int n_aug, int n_process_noise>
+void AugmentStates(const Eigen::Vector<double, n>& state_mean,
+                   const Eigen::Matrix<double, n, n>& P,
                    const Eigen::Vector<double, n_process_noise> process_noise,
                    Eigen::Vector<double, n_aug>& x_aug,
                    Eigen::Matrix<double, n_aug, n_aug>& P_aug)
 {
-    static_assert(n_x + n_process_noise == n_aug, "State dimensions not matching");
-    x_aug.head(n_x) = state_mean;
+    static_assert(n + n_process_noise == n_aug, "State dimensions not matching");
+    x_aug.head(n) = state_mean;
 
-    int index = n_x;
+    int index = n;
     while (index < n_aug)
     {
         // set rest to zero
@@ -32,7 +32,7 @@ void AugmentStates(const Eigen::Vector<double, n_x>& state_mean,
     }
 
     P_aug.fill(0.0);
-    P_aug.topLeftCorner(n_x, n_x) = P;
+    P_aug.topLeftCorner(n, n) = P;
 
     // ---calculate sigma square
     P_aug.bottomRightCorner(n_process_noise, n_process_noise) =
@@ -66,14 +66,14 @@ Eigen::Matrix<double, n_state, 2 * n_state + 1> GenerateSigmaPoints(const Eigen:
     return sigma_matrix;
 }
 
-template <int n_x, int n_process_noise>
-auto AugmentedSigmaPoints(const Eigen::Vector<double, n_x>& state_mean,
-                          const Eigen::Matrix<double, n_x, n_x>& P,
+template <int n, int n_process_noise>
+auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
+                          const Eigen::Matrix<double, n, n>& P,
                           const Eigen::Vector<double, n_process_noise> process_noise)
 {
     // create augmented mean state
     // set augmented dimension
-    constexpr int n_aug = n_x + process_noise.RowsAtCompileTime;
+    constexpr int n_aug = n + process_noise.RowsAtCompileTime;
     Eigen::Vector<double, n_aug> state_aug{};
     state_aug.fill(0.0);
     // create augmented covariance matrix
@@ -83,23 +83,26 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n_x>& state_mean,
     return GenerateSigmaPoints(state_aug, P_aug);
 }
 
-// TODO: this can be fused with measurement sigma prediction
-template <typename PredictionModel, typename InputSigmaMatrix>
+// Predictor is of the form:
+// []( Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state) -> Eigen::Vector(double, PredictionModel::n)
+template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
 typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
-                                                                    double delta_t)
+                                                                    PredictionArgs... args)
 {
     using StateVector_t = typename PredictionModel::StateVector;
 
     constexpr int n_sigma_points{InputSigmaMatrix::ColsAtCompileTime};
     typename PredictionModel::PredictedSigmaMatrix predicted_points{};
-
+    predicted_points.fill(0.0f);
     // this could be parallelized
     for (int i = 0; i < n_sigma_points; ++i)
     {
-        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_points.col(i), delta_t);
+        const Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state = sigma_points.col(i);
+        
+        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_state, args...);
 
         // Fill predicted points matrix
-        for (int state_index = 0; state_index < PredictionModel::n_x; ++state_index)
+        for (int state_index = 0; state_index < PredictionModel::n; ++state_index)
         {
             predicted_points(state_index, i) = predicted_sigma_state(state_index);
         }

@@ -6,23 +6,23 @@
 class CRTVModel
 {
   public:
-    static constexpr int n_x = 5;
+    static constexpr int n = 5;
     static constexpr int n_aug = 7;
     static constexpr int n_process_noise = 2;
     static constexpr int n_sigma_points =  2 * n_aug + 1;
 
-    using StateVector = Eigen::Vector<double, n_x>;
+    using StateVector = Eigen::Vector<double, n>;
     using StateVectorAugmented = Eigen::Vector<double, n_aug>;
 
-    using StateCovMatrix = Eigen::Matrix<double, n_x, n_x>;
-    using SigmaMatrix = Eigen::Matrix<double, n_x, 2 * n_x + 1>;
+    using StateCovMatrix = Eigen::Matrix<double, n, n>;
+    using SigmaMatrix = Eigen::Matrix<double, n, 2 * n + 1>;
     using SigmaMatrixAugmented = Eigen::Matrix<double, n_aug, n_sigma_points>;
-    using PredictedSigmaMatrix = Eigen::Matrix<double, n_x, n_sigma_points>;
+    using PredictedSigmaMatrix = Eigen::Matrix<double, n, n_sigma_points>;
 
     template <int N>
     static StateVector Predict(const Eigen::Vector<double, N>& current_state, const double delta_t)
     {
-        static_assert((N == n_x) or (N == n_aug), "State dimension must be 5 (normal state) or 7 (augmented state)");
+        static_assert((N == n) or (N == n_aug), "State dimension must be 5 (normal state) or 7 (augmented state)");
 
         double p_x = current_state(0);
         double p_y = current_state(1);

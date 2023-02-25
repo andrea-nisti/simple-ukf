@@ -79,7 +79,7 @@ class UKF
         {
             auto predicted_measure = MeasurementModel{}.Predict(current_predicted_sigma_points_.col(i));
 
-            for (int state_dim = 0; state_dim < MeasurementModel::n_z; ++state_dim)
+            for (int state_dim = 0; state_dim < MeasurementModel::n; ++state_dim)
                 predicted_measurement_sigma_points(state_dim, i) = predicted_measure(state_dim);
         }
 
@@ -107,10 +107,10 @@ class UKF
     {
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
         using PredictedMeasurementSigmaPoints_t =
-            typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
+            typename Eigen::Matrix<double, MeasurementModel::n, PredictedSigmaMatrix_t::ColsAtCompileTime>;
 
         // create matrix for cross correlation Tc, predicted measurement measure_out and pred covariance S_out
-        Eigen::Matrix<double, ProcessModel::n_x, MeasurementModel::n_z> cross_correlation_matrix{};
+        Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> cross_correlation_matrix{};
         cross_correlation_matrix.fill(0.0f);
 
         RadarModel::MeasurementVector measure_pred{};
@@ -161,4 +161,4 @@ class UKF
     PredictedSigmaMatrix_t current_predicted_sigma_points_{};
 };
 
-#endif  // EXERCISES_UKF_UKF_H
+#endif // EXERCISES_UKF_UKF_H

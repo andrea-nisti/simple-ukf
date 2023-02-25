@@ -8,7 +8,7 @@
 class RadarModel
 {
   public:
-    static constexpr int n_z = 3;
+    static constexpr int n = 3;
 
     // radar measurement noise standard deviation radius in m
     static constexpr double std_radr = 0.3;
@@ -20,7 +20,7 @@ class RadarModel
     static constexpr double std_radrd = 0.1;
 
     // clang-format off
-    using MeasurementCovMatrix = Eigen::Matrix<double, n_z, n_z>;
+    using MeasurementCovMatrix = Eigen::Matrix<double, n, n>;
     inline static const MeasurementCovMatrix measurement_cov_matrix =
         (MeasurementCovMatrix() << 
          std_radr * std_radr,        0, 0,
@@ -28,13 +28,13 @@ class RadarModel
          0,    0,    std_radrd * std_radrd).finished();
     // clang-format on
 
-    using MeasurementVector = Eigen::Vector<double, n_z>;
-    using PredictedSigmaMatrix = Eigen::Matrix<double, n_z, CRTVModel::n_sigma_points>;
+    using MeasurementVector = Eigen::Vector<double, n>;
+    using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModel::n_sigma_points>;
 
     template <typename StateVector>
     static MeasurementVector Predict(const StateVector& current_state)
     {
-        static_assert(StateVector::RowsAtCompileTime >= CRTVModel::n_x,
+        static_assert(StateVector::RowsAtCompileTime >= CRTVModel::n,
                       "The radar model works for CRTV normal or augmented state");
 
         // extract values for better readability

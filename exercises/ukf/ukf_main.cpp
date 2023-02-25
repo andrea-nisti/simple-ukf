@@ -34,7 +34,7 @@ int main()
     std::cout << instance.GetCurrentPredictedSigmaMatrix() << std::endl;
 
     // using PredictedMeasurementSigmaMatrix =
-    //     Eigen::Matrix<double, RadarModel::n_z, UKF<CRTVModel>::PredictedSigmaMatrix_t::ColsAtCompileTime>;
+    //     Eigen::Matrix<double, RadarModel::n, UKF<CRTVModel>::PredictedSigmaMatrix_t::ColsAtCompileTime>;
     // PredictedMeasurementSigmaMatrix predicted_measurement_sigma_matrix =
     //     instance.PredictMeasurement<RadarModel>(z_out, S_out);
 
