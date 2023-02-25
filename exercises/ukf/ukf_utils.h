@@ -96,8 +96,7 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
     // this could be parallelized
     for (int i = 0; i < n_sigma_points; ++i)
     {
-        const Eigen::Vector<double, sigma_points.RowsAtCompileTime>& prev_sigma_state = sigma_points.col(i);
-        StateVector_t predicted_sigma_state = PredictionModel{}.PredictState(prev_sigma_state, delta_t);
+        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_points.col(i), delta_t);
 
         // Fill predicted points matrix
         for (int state_index = 0; state_index < PredictionModel::n_x; ++state_index)

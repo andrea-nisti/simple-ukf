@@ -44,7 +44,7 @@ class UKF
         using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
         using ProcessNoiseVector = Eigen::Vector<double, ProcessModel::n_process_noise>;
 
-        auto augmented_sigma_points =
+        SigmaMatrixAugmented augmented_sigma_points =
             AugmentedSigmaPoints(current_state_, current_cov_, ProcessNoiseVector{{0.2f, 0.2f}});
 
         // Predict sigma points
@@ -58,13 +58,12 @@ class UKF
     }
 
     template <typename MeasurementModel>
-    Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime> PredictMeasurement(
+    typename MeasurementModel::PredictedSigmaMatrix PredictMeasurement(
         typename MeasurementModel::MeasurementVector& measure_out,
         typename MeasurementModel::MeasurementCovMatrix& S_out)
     {
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
-        using PredictedMeasurementSigmaPoints_t =
-            typename Eigen::Matrix<double, MeasurementModel::n_z, PredictedSigmaMatrix_t::ColsAtCompileTime>;
+        using PredictedMeasurementSigmaPoints_t = typename MeasurementModel::PredictedSigmaMatrix;
 
         // define spreading parameter and generate weights
         constexpr double lambda_ = 3 - ProcessModel::n_aug;
@@ -78,9 +77,8 @@ class UKF
         // transform sigma points into measurement space
         for (int i = 0; i < n_sigma_points; ++i)
         {
-            auto predicted_measure = MeasurementModel{}.PredictMeasure(current_predicted_sigma_points_.col(i));
+            auto predicted_measure = MeasurementModel{}.Predict(current_predicted_sigma_points_.col(i));
 
-            // measurement model
             for (int state_dim = 0; state_dim < MeasurementModel::n_z; ++state_dim)
                 predicted_measurement_sigma_points(state_dim, i) = predicted_measure(state_dim);
         }
