@@ -11,7 +11,6 @@
 
 /* TODO:
 - fix naming convention
-- refactor the general architecture: lots of repeted code
 
 impovement
 - cache last fusion timestamp
@@ -57,6 +56,7 @@ class UKF
             weights, current_predicted_sigma_points_, current_state_, &ProcessModel::AdjustState);
     }
 
+  private:
     template <typename MeasurementModel>
     typename MeasurementModel::PredictedSigmaMatrix PredictMeasurement(
         typename MeasurementModel::MeasurementVector& measure_out,
@@ -66,22 +66,11 @@ class UKF
         using PredictedMeasurementSigmaPoints_t = typename MeasurementModel::PredictedSigmaMatrix;
 
         // define spreading parameter and generate weights
-        constexpr double lambda_ = 3 - ProcessModel::n_aug;
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
-        constexpr int n_sigma_points = PredictedSigmaMatrix_t::ColsAtCompileTime;
 
         // mean predicted measurement
-        PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
-
-        // TODO: this can be fused with process sigma prediction
-        // transform sigma points into measurement space
-        for (int i = 0; i < n_sigma_points; ++i)
-        {
-            auto predicted_measure = MeasurementModel{}.Predict(current_predicted_sigma_points_.col(i));
-
-            for (int state_dim = 0; state_dim < MeasurementModel::n; ++state_dim)
-                predicted_measurement_sigma_points(state_dim, i) = predicted_measure(state_dim);
-        }
+        PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points =
+            SigmaPointPrediction<MeasurementModel>(current_predicted_sigma_points_);
 
         // mean predicted measurement
         MeasurementVector_t predicted_measurement =
@@ -100,6 +89,7 @@ class UKF
         return predicted_measurement_sigma_points;
     }
 
+  public:
     template <typename MeasurementModel>
     void UpdateState(typename MeasurementModel::MeasurementVector measure,
                      typename ProcessModel::StateVector& x_out,
@@ -120,7 +110,7 @@ class UKF
             PredictMeasurement<MeasurementModel>(measure_pred, S);
 
         // calculate cross correlation matrix
-        // this computation gives the correlation between real measure and predicted on
+        // this computation gives the correlation between real measure and predicted 
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
         for (int i = 0; i < 2 * ProcessModel::n_aug + 1; ++i)
         {
@@ -161,4 +151,4 @@ class UKF
     PredictedSigmaMatrix_t current_predicted_sigma_points_{};
 };
 
-#endif // EXERCISES_UKF_UKF_H
+#endif  // EXERCISES_UKF_UKF_H

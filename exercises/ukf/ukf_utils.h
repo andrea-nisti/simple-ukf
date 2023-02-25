@@ -89,7 +89,7 @@ template <typename PredictionModel, typename InputSigmaMatrix, typename... Predi
 typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
                                                                     PredictionArgs... args)
 {
-    using StateVector_t = typename PredictionModel::StateVector;
+    using StateVector_t = Eigen::Vector<double, PredictionModel::n>;
 
     constexpr int n_sigma_points{InputSigmaMatrix::ColsAtCompileTime};
     typename PredictionModel::PredictedSigmaMatrix predicted_points{};
