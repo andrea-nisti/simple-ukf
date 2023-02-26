@@ -8,7 +8,8 @@ int main()
     using namespace simpleukf::ukf;
     using namespace simpleukf::models;
 
-    using RadarModel = RadarModel<NoiseConstantDefault>;
+    using RadarModel = RadarModel<>;
+    using CRTVModel = CRTVModel<>;
 
     // set example state
     auto x = CRTVModel::StateVector{5.7441, 1.3800, 2.2049, 0.5015, 0.3528};

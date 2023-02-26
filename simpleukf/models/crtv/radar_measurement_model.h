@@ -5,20 +5,26 @@
 
 #include <Eigen/Dense>
 
-namespace simpleukf::models
+namespace
 {
 
-// NoiseConstants example:
-struct NoiseConstantDefault
+struct RadarNoiseConstantDefault
 {
     static constexpr double std_radr = 0.3;
     static constexpr double std_radphi = 0.0175;
     static constexpr double std_radrd = 0.1;
 };
 
-template <typename NoiseConstants = NoiseConstantDefault>
+}  // namespace
+namespace simpleukf::models
+{
+
+template <typename NoiseConstants = RadarNoiseConstantDefault>
 class RadarModel
 {
+  private:
+    using CRTVModelInt = CRTVModel<>;
+
   public:
     static constexpr int n = 3;
 
@@ -41,12 +47,12 @@ class RadarModel
     // clang-format on
 
     using MeasurementVector = Eigen::Vector<double, n>;
-    using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModel::n_sigma_points>;
+    using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModelInt::n_sigma_points>;
 
     template <typename StateVector>
     static MeasurementVector Predict(const StateVector& current_state)
     {
-        static_assert(StateVector::RowsAtCompileTime >= CRTVModel::n,
+        static_assert(StateVector::RowsAtCompileTime >= CRTVModelInt::n,
                       "The radar model works for CRTV normal or augmented state");
 
         // extract values for better readability

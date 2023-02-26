@@ -29,7 +29,7 @@ void AugmentStates(const Eigen::Vector<double, n>& state_mean,
 
     // ---calculate sigma square
     P_aug.bottomRightCorner(n_process_noise, n_process_noise) =
-        Eigen::Vector<double, n_process_noise>{process_noise.array().pow(2)}.asDiagonal();
+        Eigen::Vector<double, n_process_noise>{process_noise.array()}.asDiagonal();
 }
 
 template <int n_state>
