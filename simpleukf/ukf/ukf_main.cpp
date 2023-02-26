@@ -29,7 +29,7 @@ int main()
 
     CRTVModel::StateVector x_out{};
     CRTVModel::StateCovMatrix P_out{};
-    instance.PredictMeanAndCovariance(0.1f);
+    instance.PredictProcessMeanAndCovariance(0.1f);
 
     std::cout << "Predicted state" << std::endl;
     std::cout << instance.GetCurrentStateVector() << std::endl;

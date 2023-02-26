@@ -39,15 +39,9 @@ class UKF
         current_cov_ = init_cov_matrix;
     }
 
+    // TODO: extract a common function to be used withing the measurement prediction too.
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs&&... args)
-    {
-    }
-
-    // TODO: extract a common function to be used withing the measurement prediction too.
-    // TODO: implement typetraits to check if is augmented or not
-    template <typename... PredictionArgs>
-    void PredictMeanAndCovariance(PredictionArgs&&... args)
     {
 
         using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
@@ -67,13 +61,6 @@ class UKF
     }
 
   private:
-    template <typename PredictionModel>
-    typename PredictionModel::PredictedSigmaMatrix PredictSigmaMatrix(
-        typename PredictionModel::MeasurementVector& measure_out,
-        typename PredictionModel::MeasurementCovMatrix& S_out)
-    {
-    }
-
     template <typename MeasurementModel>
     typename MeasurementModel::PredictedSigmaMatrix PredictMeasurement(
         typename MeasurementModel::MeasurementVector& measure_out,
