@@ -112,7 +112,7 @@ class UKF
         // calculate cross correlation matrix
         // this computation gives the correlation between real measure and predicted
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
-        for (int i = 0; i < 2 * ProcessModel::n_aug + 1; ++i)
+        for (int i = 0; i < ProcessModel::n_sigma_points; ++i)
         {
             MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measure_pred;
             MeasurementModel::AdjustMeasure(measure_diff);

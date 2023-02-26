@@ -5,9 +5,6 @@
 
 #include <Eigen/Dense>
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-
 constexpr inline double GetLamda(int n_state)
 {
     return 3 - n_state;
@@ -50,7 +47,8 @@ Eigen::Matrix<double, n_state, 2 * n_state + 1> GenerateSigmaPoints(const Eigen:
     double lambda = GetLamda(n_state);
 
     // calculate square root of P
-    const MatrixXd& A = P.llt().matrixL();
+    // TODO: make matrix A compile time
+    const Eigen::MatrixXd& A = P.llt().matrixL();
 
     // set first column of sigma point matrix
     sigma_matrix.col(0) = state_mean;
@@ -83,11 +81,9 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
     return GenerateSigmaPoints(state_aug, P_aug);
 }
 
-// Predictor is of the form:
-// []( Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state) -> Eigen::Vector(double, PredictionModel::n)
 template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
 typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
-                                                                    PredictionArgs... args)
+                                                                    const PredictionArgs... args)
 {
     using StateVector_t = Eigen::Vector<double, PredictionModel::n>;
 
@@ -98,7 +94,7 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
     for (int i = 0; i < n_sigma_points; ++i)
     {
         const Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state = sigma_points.col(i);
-        
+
         StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_state, args...);
 
         // Fill predicted points matrix
