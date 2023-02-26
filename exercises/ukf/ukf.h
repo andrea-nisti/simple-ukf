@@ -110,11 +110,10 @@ class UKF
             PredictMeasurement<MeasurementModel>(measure_pred, S);
 
         // calculate cross correlation matrix
-        // this computation gives the correlation between real measure and predicted 
+        // this computation gives the correlation between real measure and predicted
         const auto weights = GenerateWeights<ProcessModel::n_aug>(lambda_);
         for (int i = 0; i < 2 * ProcessModel::n_aug + 1; ++i)
         {
-            // residual
             MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measure_pred;
             MeasurementModel::AdjustMeasure(measure_diff);
 
@@ -125,7 +124,7 @@ class UKF
         }
 
         // Kalman gain K;
-        MatrixXd K = cross_correlation_matrix * S.inverse();
+        Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K = cross_correlation_matrix * S.inverse();
 
         // residual
         MeasurementVector_t measure_diff = measure - measure_pred;
