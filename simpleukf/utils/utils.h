@@ -1,5 +1,5 @@
-#ifndef EXERCISES_UTILS_UTILS_H
-#define EXERCISES_UTILS_UTILS_H
+#ifndef SIMPLEUKF_UTILS_UTILS_H
+#define SIMPLEUKF_UTILS_UTILS_H
 
 #include <Eigen/Dense>
 #include <vector>
@@ -11,4 +11,4 @@ MatrixXd CalculateJacobian(const VectorXd& x_state);
 VectorXd CalculateRMSE(const std::vector<VectorXd>& estimations,
                        const std::vector<VectorXd>& ground_truth);
 
-#endif  // EXERCISES_UTILS_UTILS_H
+#endif  // SIMPLEUKF_UTILS_UTILS_H

@@ -2,12 +2,12 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "models",
+    name = "crtv_models",
     srcs = [
-        "crtv_model.h",
-        "radar_measurement_model.h"
+        "crtv/crtv_model.h",
+        "crtv/radar_measurement_model.h"
     ],
-    hdrs = ["models.h"],
+    hdrs = ["crtv_models.h"],
     deps = [
        "@eigen_repo//:eigen"
     ]

@@ -1,9 +1,12 @@
-#ifndef EXERCISES_UKF_UKF_UTILS_H
-#define EXERCISES_UKF_UKF_UTILS_H
+#ifndef SIMPLEUKF_UKF_UKF_UTILS_H
+#define SIMPLEUKF_UKF_UKF_UTILS_H
 
 #include <iostream>
 
 #include <Eigen/Dense>
+
+namespace simpleukf::ukf_utils
+{
 
 constexpr inline double GetLamda(int n_state)
 {
@@ -18,15 +21,8 @@ void AugmentStates(const Eigen::Vector<double, n>& state_mean,
                    Eigen::Matrix<double, n_aug, n_aug>& P_aug)
 {
     static_assert(n + n_process_noise == n_aug, "State dimensions not matching");
+    x_aug.fill(0.0f);
     x_aug.head(n) = state_mean;
-
-    int index = n;
-    while (index < n_aug)
-    {
-        // set rest to zero
-        x_aug(index) = 0;
-        ++index;
-    }
 
     P_aug.fill(0.0);
     P_aug.topLeftCorner(n, n) = P;
@@ -67,7 +63,7 @@ Eigen::Matrix<double, n_state, 2 * n_state + 1> GenerateSigmaPoints(const Eigen:
 template <int n, int n_process_noise>
 auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
                           const Eigen::Matrix<double, n, n>& P,
-                          const Eigen::Vector<double, n_process_noise> process_noise)
+                          Eigen::Vector<double, n_process_noise> process_noise)
 {
     // create augmented mean state
     // set augmented dimension
@@ -164,4 +160,6 @@ Eigen::Matrix<double, n_state, n_state> ComputeCovarianceFromSigmaPoints(
     return P;
 }
 
-#endif  // EXERCISES_UKF_UKF_UTILS_H
+}  // namespace simpleukf::utils
+
+#endif  // SIMPLEUKF_UKF_UKF_UTILS_H

@@ -1,23 +1,35 @@
-#ifndef EXERCISES_MODELS_RADAR_MEASUREMENT_MODEL_H
-#define EXERCISES_MODELS_RADAR_MEASUREMENT_MODEL_H
+#ifndef SIMPLEUKF_MODELS_RADAR_MEASUREMENT_MODEL_H
+#define SIMPLEUKF_MODELS_RADAR_MEASUREMENT_MODEL_H
 
 #include "crtv_model.h"
 
 #include <Eigen/Dense>
 
+namespace simpleukf::models
+{
+
+// NoiseConstants example:
+struct NoiseConstantDefault
+{
+    static constexpr double std_radr = 0.3;
+    static constexpr double std_radphi = 0.0175;
+    static constexpr double std_radrd = 0.1;
+};
+
+template <typename NoiseConstants = NoiseConstantDefault>
 class RadarModel
 {
   public:
     static constexpr int n = 3;
 
     // radar measurement noise standard deviation radius in m
-    static constexpr double std_radr = 0.3;
+    static constexpr double std_radr = NoiseConstants::std_radr;  // 0.3;
 
     // radar measurement noise standard deviation angle in rad
-    static constexpr double std_radphi = 0.0175;
+    static constexpr double std_radphi = NoiseConstants::std_radphi;  // 0.0175;
 
     // radar measurement noise standard deviation radius change in m/s
-    static constexpr double std_radrd = 0.1;
+    static constexpr double std_radrd = NoiseConstants::std_radrd;  // 0.1;
 
     // clang-format off
     using MeasurementCovMatrix = Eigen::Matrix<double, n, n>;
@@ -65,4 +77,6 @@ class RadarModel
     }
 };
 
-#endif  // EXERCISES_MODELS_RADAR_MEASUREMENT_MODEL_H
+}  // namespace simpleukf::models
+
+#endif  // SIMPLEUKF_MODELS_RADAR_MEASUREMENT_MODEL_H

@@ -1,10 +1,15 @@
 #include <iostream>
 
-#include "exercises/models/models.h"
+#include "simpleukf/models/crtv_models.h"
 #include "ukf.h"
 
 int main()
 {
+    using namespace simpleukf::ukf;
+    using namespace simpleukf::models;
+
+    using RadarModel = RadarModel<NoiseConstantDefault>;
+
     // set example state
     auto x = CRTVModel::StateVector{5.7441, 1.3800, 2.2049, 0.5015, 0.3528};
 
@@ -32,16 +37,6 @@ int main()
     std::cout << "Predicted sigma matrix" << std::endl;
 
     std::cout << instance.GetCurrentPredictedSigmaMatrix() << std::endl;
-
-    // using PredictedMeasurementSigmaMatrix =
-    //     Eigen::Matrix<double, RadarModel::n, UKF<CRTVModel>::PredictedSigmaMatrix_t::ColsAtCompileTime>;
-    // PredictedMeasurementSigmaMatrix predicted_measurement_sigma_matrix =
-    //     instance.PredictMeasurement<RadarModel>(z_out, S_out);
-
-    // std::cout << "Predicted measurement" << std::endl;
-    // std::cout << z_out << std::endl;
-    // std::cout << "Measurement covariance matrix" << std::endl;
-    // std::cout << S_out << std::endl;
 
     // create example vector for mean predicted measurement
     RadarModel::MeasurementVector z{};

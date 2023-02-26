@@ -16,10 +16,8 @@ cc_library(
 cc_library(
     name = "ukf_utils",
     srcs = [
-        "ukf_utils.cpp",
         "ukf_utils.h"
     ],
-    hdrs = ["ukf_utils.h"],
     deps = [
        "@eigen_repo//:eigen"
     ]
@@ -31,7 +29,7 @@ cc_binary(
         "ukf_main.cpp",
     ],
     deps = [
-       "//exercises/models",
+       "//simpleukf/models:crtv_models",
        ":ukf",
     ],
 )

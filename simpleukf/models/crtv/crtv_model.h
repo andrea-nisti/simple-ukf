@@ -1,20 +1,21 @@
-#ifndef EXERCISES_MODELS_CRTV_MODEL_H
-#define EXERCISES_MODELS_CRTV_MODEL_H
+#ifndef SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
+#define SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
 
 #include <Eigen/Dense>
+namespace simpleukf::models
+{
 
 class CRTVModel
 {
   public:
     static constexpr int n = 5;
-    static constexpr int n_aug = 7;
     static constexpr int n_process_noise = 2;
-    static constexpr int n_sigma_points =  2 * n_aug + 1;
+    static constexpr int n_aug = n + n_process_noise;
+    static constexpr int n_sigma_points = 2 * n_aug + 1;
 
     using StateVector = Eigen::Vector<double, n>;
-    using StateVectorAugmented = Eigen::Vector<double, n_aug>;
-
     using StateCovMatrix = Eigen::Matrix<double, n, n>;
+
     using SigmaMatrix = Eigen::Matrix<double, n, 2 * n + 1>;
     using SigmaMatrixAugmented = Eigen::Matrix<double, n_aug, n_sigma_points>;
     using PredictedSigmaMatrix = Eigen::Matrix<double, n, n_sigma_points>;
@@ -84,4 +85,6 @@ class CRTVModel
     }
 };
 
-#endif // EXERCISES_MODELS_CRTV_MODEL_H
+}  // namespace simpleukf::models
+
+#endif  // SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
