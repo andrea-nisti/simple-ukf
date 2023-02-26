@@ -9,6 +9,14 @@ cc_library(
     ],
     hdrs = ["crtv_models.h"],
     deps = [
-       "@eigen_repo//:eigen"
+       "@eigen_repo//:eigen",
+       ":models_utils"
+    ]
+)
+
+cc_library(
+    name = "models_utils",
+    srcs = [
+        "models_utils.h",
     ]
 )
