@@ -27,7 +27,10 @@ class CRTVModel
     using StateVector = Eigen::Vector<double, n>;
     using StateCovMatrix = Eigen::Matrix<double, n, n>;
 
-    using SigmaMatrix = Eigen::Matrix<double, n, 2 * n + 1>;
+    // useful aliases
+    using PredictedVector = StateVector;
+    using PredictedCovMatrix = StateCovMatrix;
+
     using SigmaMatrixAugmented = Eigen::Matrix<double, n_aug, n_sigma_points>;
     using PredictedSigmaMatrix = Eigen::Matrix<double, n, n_sigma_points>;
 
@@ -38,7 +41,6 @@ class CRTVModel
             .finished();
 
     static inline constexpr double GetLambda() { return 3 - n_aug; };
-
     static constexpr auto GenerateWeights()
     {
         constexpr double lambda = GetLambda();
@@ -111,7 +113,7 @@ class CRTVModel
         return return_state;
     }
 
-    static void AdjustState(StateVector& to_be_adjusted)
+    static void Adjust(StateVector& to_be_adjusted)
     {
         while (to_be_adjusted(3) > M_PI)
             to_be_adjusted(3) -= 2. * M_PI;

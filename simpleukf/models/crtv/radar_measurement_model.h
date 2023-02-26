@@ -39,7 +39,7 @@ class RadarModel
 
     // clang-format off
     using MeasurementCovMatrix = Eigen::Matrix<double, n, n>;
-    inline static const MeasurementCovMatrix measurement_cov_matrix =
+    inline static const MeasurementCovMatrix noise_matrix_squared =
         (MeasurementCovMatrix() << 
          std_radr * std_radr,        0, 0,
          0,    std_radphi * std_radphi, 0, 
@@ -49,12 +49,15 @@ class RadarModel
     using MeasurementVector = Eigen::Vector<double, n>;
     using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModelInt::n_sigma_points>;
 
-    template <typename StateVector>
-    static MeasurementVector Predict(const StateVector& current_state)
-    {
-        static_assert(StateVector::RowsAtCompileTime >= CRTVModelInt::n,
-                      "The radar model works for CRTV normal or augmented state");
+    // useful aliases (uniform process and measurement models)
+    using PredictedVector = MeasurementVector;
+    using PredictedCovMatrix = MeasurementCovMatrix;
 
+    static MeasurementVector Predict(const CRTVModelInt::StateVector& current_state)
+    {
+        static_assert(current_state.RowsAtCompileTime == CRTVModelInt::n,
+                      "Input state dimension must be equal to CRTV state size.");
+                      
         // extract values for better readability
         double p_x = current_state(0);
         double p_y = current_state(1);
@@ -73,7 +76,7 @@ class RadarModel
         return return_state;
     }
 
-    static void AdjustMeasure(MeasurementVector& to_be_adjusted)
+    static void Adjust(MeasurementVector& to_be_adjusted)
     {
         // angle normalization
         while (to_be_adjusted(1) > M_PI)
