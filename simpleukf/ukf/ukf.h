@@ -39,8 +39,10 @@ class UKF
         current_cov_ = init_cov_matrix;
     }
 
-    // TODO: extract a common function to be used withing the measurement prediction too
-    void PredictMeanAndCovariance(const double delta_t)
+    // TODO: extract a common function to be used withing the measurement prediction too.
+    // TODO: implement typetraits to check if is augmented or not
+    template <typename... PredictionArgs>
+    void PredictMeanAndCovariance(PredictionArgs&&... args)
     {
         using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
         using ProcessNoiseVector = Eigen::Vector<double, ProcessModel::n_process_noise>;
@@ -49,8 +51,8 @@ class UKF
             ukf_utils::AugmentedSigmaPoints(current_state_, current_cov_, ProcessNoiseVector{{0.2f, 0.2f}});
 
         // Predict sigma points
-        current_predicted_sigma_points_ =
-            ukf_utils::SigmaPointPrediction<ProcessModel>(augmented_sigma_points, delta_t);
+        current_predicted_sigma_points_ = ukf_utils::SigmaPointPrediction<ProcessModel>(
+            augmented_sigma_points, std::forward<const PredictionArgs>(args)...);
 
         const auto weights = ukf_utils::GenerateWeights<ProcessModel::n_aug>(lambda_);
 

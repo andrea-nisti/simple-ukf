@@ -79,7 +79,7 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
 
 template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
 typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
-                                                                    const PredictionArgs... args)
+                                                                    const PredictionArgs&&... args)
 {
     using StateVector_t = Eigen::Vector<double, PredictionModel::n>;
 
@@ -91,7 +91,7 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
     {
         const Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state = sigma_points.col(i);
 
-        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_state, args...);
+        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_state, std::forward<const PredictionArgs>(args)...);
 
         // Fill predicted points matrix
         for (int state_index = 0; state_index < PredictionModel::n; ++state_index)
