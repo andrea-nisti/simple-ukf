@@ -30,11 +30,30 @@ class CRTVModel
     using SigmaMatrix = Eigen::Matrix<double, n, 2 * n + 1>;
     using SigmaMatrixAugmented = Eigen::Matrix<double, n_aug, n_sigma_points>;
     using PredictedSigmaMatrix = Eigen::Matrix<double, n, n_sigma_points>;
-    
+
     using NoiseMatrixSquared = Eigen::Vector<double, n_process_noise>;
     inline static const NoiseMatrixSquared noise_matrix_squared =
-        (NoiseMatrixSquared() << ProcessNoise::nu_a * ProcessNoise::nu_a, ProcessNoise::nu_psi_dd * ProcessNoise::nu_psi_dd)
+        (NoiseMatrixSquared() << ProcessNoise::nu_a * ProcessNoise::nu_a,
+         ProcessNoise::nu_psi_dd* ProcessNoise::nu_psi_dd)
             .finished();
+
+    static inline constexpr double GetLambda() { return 3 - n_aug; };
+
+    static constexpr auto GenerateWeights()
+    {
+        constexpr double lambda = GetLambda();
+        // set vector for weights
+        Eigen::Vector<double, n_sigma_points> weights{};
+        double weight_0 = lambda / (lambda + n_aug);
+        double weight = 0.5 / (lambda + n_aug);
+        weights(0) = weight_0;
+
+        for (int i = 1; i < n_sigma_points; ++i)
+        {
+            weights(i) = weight;
+        }
+        return weights;
+    }
 
     template <int N>
     static StateVector Predict(const Eigen::Vector<double, N>& current_state, const double delta_t)

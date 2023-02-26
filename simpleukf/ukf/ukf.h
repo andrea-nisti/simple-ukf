@@ -47,17 +47,15 @@ class UKF
         using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
 
         SigmaMatrixAugmented augmented_sigma_points =
-            ukf_utils::AugmentedSigmaPoints(current_state_, current_cov_, ProcessModel::noise_matrix_squared);
+            ukf_utils::AugmentedSigmaPoints(current_state_, current_cov_, lambda_, ProcessModel::noise_matrix_squared);
 
         // Predict sigma points
         current_predicted_sigma_points_ = ukf_utils::SigmaPointPrediction<ProcessModel>(
             augmented_sigma_points, std::forward<const PredictionArgs>(args)...);
 
-        const auto weights = ukf_utils::GenerateWeights<ProcessModel::n_aug>(lambda_);
-
-        current_state_ = ukf_utils::ComputeMeanFromSigmaPoints(weights, current_predicted_sigma_points_);
+        current_state_ = ukf_utils::ComputeMeanFromSigmaPoints(weights_, current_predicted_sigma_points_);
         current_cov_ = ukf_utils::ComputeCovarianceFromSigmaPoints(
-            weights, current_predicted_sigma_points_, current_state_, &ProcessModel::AdjustState);
+            weights_, current_predicted_sigma_points_, current_state_, &ProcessModel::AdjustState);
     }
 
   private:
@@ -70,7 +68,6 @@ class UKF
         using PredictedMeasurementSigmaPoints_t = typename MeasurementModel::PredictedSigmaMatrix;
 
         // define spreading parameter and generate weights
-        const auto weights = ukf_utils::GenerateWeights<ProcessModel::n_aug>(lambda_);
 
         // mean predicted measurement
         PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points =
@@ -78,10 +75,10 @@ class UKF
 
         // mean predicted measurement
         MeasurementVector_t predicted_measurement =
-            ukf_utils::ComputeMeanFromSigmaPoints(weights, predicted_measurement_sigma_points);
+            ukf_utils::ComputeMeanFromSigmaPoints(weights_, predicted_measurement_sigma_points);
 
         typename MeasurementModel::MeasurementCovMatrix S = ukf_utils::ComputeCovarianceFromSigmaPoints(
-            weights, predicted_measurement_sigma_points, predicted_measurement, &MeasurementModel::AdjustMeasure);
+            weights_, predicted_measurement_sigma_points, predicted_measurement, &MeasurementModel::AdjustMeasure);
 
         // add measurement noise covariance matrix
         S = S + MeasurementModel::measurement_cov_matrix;
@@ -117,7 +114,6 @@ class UKF
 
         // calculate cross correlation matrix
         // this computation gives the correlation between real measure and predicted
-        const auto weights = ukf_utils::GenerateWeights<ProcessModel::n_aug>(lambda_);
         for (int i = 0; i < ProcessModel::n_sigma_points; ++i)
         {
             MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measure_pred;
@@ -126,7 +122,7 @@ class UKF
             StateVector_t x_diff = current_predicted_sigma_points_.col(i) - current_state_;
             ProcessModel::AdjustState(x_diff);
 
-            cross_correlation_matrix = cross_correlation_matrix + weights(i) * x_diff * measure_diff.transpose();
+            cross_correlation_matrix = cross_correlation_matrix + weights_(i) * x_diff * measure_diff.transpose();
         }
 
         // Kalman gain K;
@@ -150,7 +146,9 @@ class UKF
     const StateCovMatrix_t& GetCurrentCovarianceMatrix() const { return current_cov_; }
 
   private:
-    static constexpr double lambda_ = 3 - ProcessModel::n_aug;
+    static constexpr double lambda_ = ProcessModel::GetLambda();
+    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_ = ProcessModel::GenerateWeights();
+
     StateVector_t current_state_{};
     StateCovMatrix_t current_cov_{};
     PredictedSigmaMatrix_t current_predicted_sigma_points_{};

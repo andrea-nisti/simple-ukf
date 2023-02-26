@@ -8,11 +8,6 @@
 namespace simpleukf::ukf_utils
 {
 
-constexpr inline double GetLamda(int n_state)
-{
-    return 3 - n_state;
-}
-
 template <int n, int n_aug, int n_process_noise>
 void AugmentStates(const Eigen::Vector<double, n>& state_mean,
                    const Eigen::Matrix<double, n, n>& P,
@@ -34,13 +29,11 @@ void AugmentStates(const Eigen::Vector<double, n>& state_mean,
 
 template <int n_state>
 Eigen::Matrix<double, n_state, 2 * n_state + 1> GenerateSigmaPoints(const Eigen::Vector<double, n_state>& state_mean,
-                                                                    const Eigen::Matrix<double, n_state, n_state>& P)
+                                                                    const Eigen::Matrix<double, n_state, n_state>& P,
+                                                                    const double lambda)
 {
     // create sigma point matrix
     Eigen::Matrix<double, n_state, 2 * n_state + 1> sigma_matrix{};
-
-    // define spreading parameter
-    double lambda = GetLamda(n_state);
 
     // calculate square root of P
     // TODO: make matrix A compile time
@@ -63,6 +56,7 @@ Eigen::Matrix<double, n_state, 2 * n_state + 1> GenerateSigmaPoints(const Eigen:
 template <int n, int n_process_noise>
 auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
                           const Eigen::Matrix<double, n, n>& P,
+                          const double lambda,
                           Eigen::Vector<double, n_process_noise> process_noise)
 {
     // create augmented mean state
@@ -74,7 +68,7 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
     Eigen::Matrix<double, n_aug, n_aug> P_aug;
 
     AugmentStates(state_mean, P, std::move(process_noise), state_aug, P_aug);
-    return GenerateSigmaPoints(state_aug, P_aug);
+    return GenerateSigmaPoints(state_aug, P_aug, lambda);
 }
 
 template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
@@ -91,7 +85,8 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
     {
         const Eigen::Vector<double, InputSigmaMatrix::RowsAtCompileTime>& sigma_state = sigma_points.col(i);
 
-        StateVector_t predicted_sigma_state = PredictionModel{}.Predict(sigma_state, std::forward<const PredictionArgs>(args)...);
+        StateVector_t predicted_sigma_state =
+            PredictionModel{}.Predict(sigma_state, std::forward<const PredictionArgs>(args)...);
 
         // Fill predicted points matrix
         for (int state_index = 0; state_index < PredictionModel::n; ++state_index)
@@ -101,23 +96,6 @@ typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputS
     }
 
     return predicted_points;
-}
-
-template <int state_dim>
-constexpr auto GenerateWeights(double lambda)
-{
-    constexpr int n_sigma_points = 2 * state_dim + 1;
-    // set vector for weights
-    Eigen::Vector<double, n_sigma_points> weights{};
-    double weight_0 = lambda / (lambda + state_dim);
-    double weight = 0.5 / (lambda + state_dim);
-    weights(0) = weight_0;
-
-    for (int i = 1; i < n_sigma_points; ++i)
-    {
-        weights(i) = weight;
-    }
-    return weights;
 }
 
 template <int n_state, int n_sigma_points>
@@ -160,6 +138,6 @@ Eigen::Matrix<double, n_state, n_state> ComputeCovarianceFromSigmaPoints(
     return P;
 }
 
-}  // namespace simpleukf::utils
+}  // namespace simpleukf::ukf_utils
 
 #endif  // SIMPLEUKF_UKF_UKF_UTILS_H
