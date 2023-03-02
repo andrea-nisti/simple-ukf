@@ -64,7 +64,6 @@ class UKF
         const auto prediction = PredictMeasurement<MeasurementModel>(
             predicted_measurement_sigma_points, std::forward<const MeasurementPredictionArgs>(args)...);
 
-        // this computation gives the correlation between real measure and predicted
         // create matrix for cross correlation: predicted measurement `prediction.mean` and pred covariance
         // `prediction.covariance`
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> cross_correlation_matrix{};
