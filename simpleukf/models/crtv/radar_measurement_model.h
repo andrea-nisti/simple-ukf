@@ -47,9 +47,8 @@ class RadarModel
     // clang-format on
 
     using MeasurementVector = Eigen::Vector<double, n>;
-    //using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModelInt::n_sigma_points>;
 
-    // useful aliases (uniform process and measurement models)
+    // useful aliases (to uniform process and measurement models)
     using PredictedVector = MeasurementVector;
     using PredictedCovMatrix = MeasurementCovMatrix;
 
@@ -57,7 +56,7 @@ class RadarModel
     {
         static_assert(current_state.RowsAtCompileTime == CRTVModelInt::n,
                       "Input state dimension must be equal to CRTV state size.");
-                      
+
         // extract values for better readability
         double p_x = current_state(0);
         double p_y = current_state(1);

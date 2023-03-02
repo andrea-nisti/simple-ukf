@@ -39,9 +39,7 @@ class UKF
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs&&... args)
     {
-        using SigmaMatrixAugmented = typename ProcessModel::SigmaMatrixAugmented;
-
-        SigmaMatrixAugmented augmented_sigma_points =
+        auto augmented_sigma_points =
             ukf_utils::AugmentedSigmaPoints(current_state_, current_cov_, lambda_, ProcessModel::noise_matrix_squared);
 
         const auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
