@@ -27,8 +27,6 @@ int main()
     UKF<CRTVModel> instance{};
     instance.Init(x, P);
 
-    CRTVModel::StateVector x_out{};
-    CRTVModel::StateCovMatrix P_out{};
     instance.PredictProcessMeanAndCovariance(0.1f);
 
     std::cout << "Predicted state" << std::endl;
@@ -45,11 +43,12 @@ int main()
         0.2187,   // phi in rad
         2.0062;   // rho_dot in m/s
 
-    instance.UpdateState<RadarModel>(z, x_out, P_out);
-    std::cout << "Updated state" << std::endl;
-    std::cout << x_out << std::endl;
-    std::cout << "Updated covariance matrix" << std::endl;
-    std::cout << P_out << std::endl;
+    instance.UpdateState<RadarModel>(z);
+    std::cout << "Predicted state" << std::endl;
+    std::cout << instance.GetCurrentStateVector() << std::endl;
+    std::cout << "Predicted covariance matrix" << std::endl;
+    std::cout << instance.GetCurrentCovarianceMatrix() << std::endl;
+    std::cout << "Predicted sigma matrix" << std::endl;
 
     return 0;
 }

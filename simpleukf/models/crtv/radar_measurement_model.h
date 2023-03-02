@@ -47,7 +47,7 @@ class RadarModel
     // clang-format on
 
     using MeasurementVector = Eigen::Vector<double, n>;
-    using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModelInt::n_sigma_points>;
+    //using PredictedSigmaMatrix = Eigen::Matrix<double, n, CRTVModelInt::n_sigma_points>;
 
     // useful aliases (uniform process and measurement models)
     using PredictedVector = MeasurementVector;

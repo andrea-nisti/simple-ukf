@@ -32,7 +32,6 @@ class CRTVModel
     using PredictedCovMatrix = StateCovMatrix;
 
     using SigmaMatrixAugmented = Eigen::Matrix<double, n_aug, n_sigma_points>;
-    using PredictedSigmaMatrix = Eigen::Matrix<double, n, n_sigma_points>;
 
     using NoiseMatrixSquared = Eigen::Vector<double, n_process_noise>;
     inline static const NoiseMatrixSquared noise_matrix_squared =

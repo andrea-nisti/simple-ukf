@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 
 /* TODO:
-- fix naming convention
+- make prediction independent from augmentation
 
 impovement
 - cache last fusion timestamp
@@ -24,7 +24,7 @@ class UKF
   public:
     using StateVector_t = typename ProcessModel::StateVector;
     using StateCovMatrix_t = typename ProcessModel::StateCovMatrix;
-    using PredictedSigmaMatrix_t = typename ProcessModel::PredictedSigmaMatrix;
+    using PredictedProcessSigmaMatrix_t = ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>;
 
     /**
      * Init Initializes Unscented Kalman filter
@@ -36,53 +36,6 @@ class UKF
         current_cov_ = init_cov_matrix;
     }
 
-  private:
-    template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
-    std::pair<typename PredictionModel::PredictedVector, typename PredictionModel::PredictedCovMatrix>
-    PredictMeanAndCovarianceFromSigmaPoints(typename PredictionModel::PredictedSigmaMatrix& predicted_sigma_matrix_out,
-                                            const InputSigmaMatrix& current_sigma_points,
-                                            PredictionArgs&&... args)
-    {
-        std::pair<typename PredictionModel::PredictedVector, typename PredictionModel::PredictedCovMatrix> prediction{};
-        // Predict sigma points
-        predicted_sigma_matrix_out = ukf_utils::SigmaPointPrediction<PredictionModel>(
-            current_sigma_points, std::forward<const PredictionArgs>(args)...);
-
-        const typename PredictionModel::PredictedVector& predicted_state =
-            ukf_utils::ComputeMeanFromSigmaPoints(weights_, predicted_sigma_matrix_out);
-
-        const typename PredictionModel::PredictedCovMatrix& predicted_cov = ukf_utils::ComputeCovarianceFromSigmaPoints(
-            weights_, predicted_sigma_matrix_out, predicted_state, &PredictionModel::Adjust);
-
-        return {predicted_state, predicted_cov};
-    }
-
-    template <typename MeasurementModel>
-    typename MeasurementModel::PredictedSigmaMatrix PredictMeasurement(
-        typename MeasurementModel::MeasurementVector& measure_out,
-        typename MeasurementModel::MeasurementCovMatrix& S_out)
-    {
-        using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
-        using PredictedMeasurementSigmaPoints_t = typename MeasurementModel::PredictedSigmaMatrix;
-
-        // mean predicted measurement
-        PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
-
-        auto prediction = PredictMeanAndCovarianceFromSigmaPoints<MeasurementModel>(predicted_measurement_sigma_points,
-                                                                                current_predicted_sigma_points_);
-
-        // add measurement noise covariance matrix
-        prediction.second += MeasurementModel::noise_matrix_squared;
-
-        // write result
-        measure_out = prediction.first;
-        S_out = prediction.second;
-
-        return predicted_measurement_sigma_points;
-    }
-
-  public:
-    // TODO: extract a common function to be used withing the measurement prediction too.
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs&&... args)
     {
@@ -91,39 +44,36 @@ class UKF
         SigmaMatrixAugmented augmented_sigma_points =
             ukf_utils::AugmentedSigmaPoints(current_state_, current_cov_, lambda_, ProcessModel::noise_matrix_squared);
 
-        const auto& prediction = PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
-            current_predicted_sigma_points_, augmented_sigma_points, std::forward<const PredictionArgs>(args)...);
+        const auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
+            current_predicted_sigma_points_,
+            augmented_sigma_points,
+            weights_,
+            std::forward<const PredictionArgs>(args)...);
 
-        current_state_ = prediction.first;
-        current_cov_ = prediction.second;
+        current_state_ = prediction.mean;
+        current_cov_ = prediction.covariance;
     }
 
-    template <typename MeasurementModel>
-    void UpdateState(const typename MeasurementModel::MeasurementVector& measure,
-                     typename ProcessModel::StateVector& x_out,
-                     typename ProcessModel::StateCovMatrix& P_out)
+    template <typename MeasurementModel, typename... MeasurementPredictionArgs>
+    void UpdateState(const typename MeasurementModel::MeasurementVector& measure, MeasurementPredictionArgs&&... args)
     {
         using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
-        using MeasurementCovarianceMatrix_t = typename MeasurementModel::MeasurementCovMatrix;
-
         using PredictedMeasurementSigmaPoints_t =
-            typename Eigen::Matrix<double, MeasurementModel::n, PredictedSigmaMatrix_t::ColsAtCompileTime>;
+            ukf_utils::PredictedSigmaMatrix<MeasurementModel, ProcessModel::n_sigma_points>;
 
-        // create matrix for cross correlation Tc, predicted measurement measure_out and pred covariance S_out
+        PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
+
+        const auto prediction = PredictMeasurement<MeasurementModel>(
+            predicted_measurement_sigma_points, std::forward<const MeasurementPredictionArgs>(args)...);
+
+        // this computation gives the correlation between real measure and predicted
+        // create matrix for cross correlation: predicted measurement `prediction.mean` and pred covariance
+        // `prediction.covariance`
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> cross_correlation_matrix{};
         cross_correlation_matrix.fill(0.0f);
-
-        MeasurementVector_t measure_pred{};
-        MeasurementCovarianceMatrix_t S{};
-
-        const PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points =
-            PredictMeasurement<MeasurementModel>(measure_pred, S);
-
-        // calculate cross correlation matrix
-        // this computation gives the correlation between real measure and predicted
         for (int i = 0; i < ProcessModel::n_sigma_points; ++i)
         {
-            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measure_pred;
+            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - prediction.mean;
             MeasurementModel::Adjust(measure_diff);
 
             StateVector_t x_diff = current_predicted_sigma_points_.col(i) - current_state_;
@@ -133,32 +83,52 @@ class UKF
         }
 
         // Kalman gain K;
-        Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K = cross_correlation_matrix * S.inverse();
+        Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K =
+            cross_correlation_matrix * prediction.covariance.inverse();
 
         // residual
-        MeasurementVector_t measure_diff = measure - measure_pred;
+        MeasurementVector_t measure_diff = measure - prediction.mean;
 
         // angle normalization
         MeasurementModel::Adjust(measure_diff);
 
         // update state mean and covariance matrix
         current_state_ = current_state_ + K * measure_diff;
-        current_cov_ = current_cov_ - K * S * K.transpose();
-        x_out = current_state_;
-        P_out = current_cov_;
+        current_cov_ = current_cov_ - K * prediction.covariance * K.transpose();
     }
 
-    const PredictedSigmaMatrix_t& GetCurrentPredictedSigmaMatrix() const { return current_predicted_sigma_points_; }
+    const PredictedProcessSigmaMatrix_t& GetCurrentPredictedSigmaMatrix() const
+    {
+        return current_predicted_sigma_points_;
+    }
     const StateVector_t& GetCurrentStateVector() const { return current_state_; }
     const StateCovMatrix_t& GetCurrentCovarianceMatrix() const { return current_cov_; }
 
   private:
+    // TODO: extract a general "predict mean and covariance" to be used both for measurements and process
+    template <typename MeasurementModel, typename... MeasurementPredictionArgs>
+    ukf_utils::MeanAndCovariance<MeasurementModel> PredictMeasurement(
+        ukf_utils::PredictedSigmaMatrix<MeasurementModel, ProcessModel::n_sigma_points>& predicted_sigma_matrix_out,
+        MeasurementPredictionArgs&&... args)
+    {
+        auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<MeasurementModel>(
+            predicted_sigma_matrix_out,
+            current_predicted_sigma_points_,
+            weights_,
+            std::forward<const MeasurementPredictionArgs>(args)...);
+
+        // add measurement noise covariance matrix
+        prediction.covariance += MeasurementModel::noise_matrix_squared;
+
+        return prediction;
+    }
+
     static constexpr double lambda_ = ProcessModel::GetLambda();
     const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_ = ProcessModel::GenerateWeights();
 
     StateVector_t current_state_{};
     StateCovMatrix_t current_cov_{};
-    PredictedSigmaMatrix_t current_predicted_sigma_points_{};
+    PredictedProcessSigmaMatrix_t current_predicted_sigma_points_{};
 };
 
 }  // namespace simpleukf::ukf

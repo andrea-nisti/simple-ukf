@@ -8,6 +8,16 @@
 namespace simpleukf::ukf_utils
 {
 
+template <typename PredictionModel, int n_sigma_points>
+using PredictedSigmaMatrix = Eigen::Matrix<double, PredictionModel::n, n_sigma_points>;
+
+template <typename PredictionModel>
+struct MeanAndCovariance
+{
+    typename PredictionModel::PredictedVector mean;
+    typename PredictionModel::PredictedCovMatrix covariance;
+};
+
 template <int n, int n_aug, int n_process_noise>
 void AugmentStates(const Eigen::Vector<double, n>& state_mean,
                    const Eigen::Matrix<double, n, n>& P,
@@ -72,13 +82,14 @@ auto AugmentedSigmaPoints(const Eigen::Vector<double, n>& state_mean,
 }
 
 template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
-typename PredictionModel::PredictedSigmaMatrix SigmaPointPrediction(const InputSigmaMatrix& sigma_points,
-                                                                    const PredictionArgs&&... args)
+PredictedSigmaMatrix<PredictionModel, InputSigmaMatrix::ColsAtCompileTime> SigmaPointPrediction(
+    const InputSigmaMatrix& sigma_points,
+    const PredictionArgs&&... args)
 {
     using StateVector_t = Eigen::Vector<double, PredictionModel::n>;
 
     constexpr int n_sigma_points{InputSigmaMatrix::ColsAtCompileTime};
-    typename PredictionModel::PredictedSigmaMatrix predicted_points{};
+    PredictedSigmaMatrix<PredictionModel, InputSigmaMatrix::ColsAtCompileTime> predicted_points{};
     predicted_points.fill(0.0f);
     // this could be parallelized
     for (int i = 0; i < n_sigma_points; ++i)
@@ -136,6 +147,27 @@ Eigen::Matrix<double, n_state, n_state> ComputeCovarianceFromSigmaPoints(
         P = P + weights(i) * diff * diff.transpose();
     }
     return P;
+}
+
+template <typename PredictionModel, typename InputSigmaMatrix, typename... PredictionArgs>
+MeanAndCovariance<PredictionModel> PredictMeanAndCovarianceFromSigmaPoints(
+    PredictedSigmaMatrix<PredictionModel, InputSigmaMatrix::ColsAtCompileTime>& predicted_sigma_matrix_out,
+    const InputSigmaMatrix& current_sigma_points,
+    const Eigen::Vector<double, InputSigmaMatrix::ColsAtCompileTime> weights,
+    PredictionArgs&&... args)
+{
+    // Predict sigma points
+    predicted_sigma_matrix_out.fill(0.0f);
+    predicted_sigma_matrix_out = ukf_utils::SigmaPointPrediction<PredictionModel>(
+        current_sigma_points, std::forward<const PredictionArgs>(args)...);
+
+    const typename PredictionModel::PredictedVector& predicted_state =
+        ukf_utils::ComputeMeanFromSigmaPoints(weights, predicted_sigma_matrix_out);
+
+    const typename PredictionModel::PredictedCovMatrix& predicted_cov = ukf_utils::ComputeCovarianceFromSigmaPoints(
+        weights, predicted_sigma_matrix_out, predicted_state, &PredictionModel::Adjust);
+
+    return {predicted_state, predicted_cov};
 }
 
 }  // namespace simpleukf::ukf_utils
