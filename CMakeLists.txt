@@ -11,7 +11,7 @@ project(ukf)
 if( NOT DEFINED EIGEN3_INCLUDE_DIR )
 
     # First check in current folder
-    if(EXISTS ${PROJECT_SOURCE_DIR}/Eigen)
+    if(EXISTS ${CMAKE_SOURCE_DIR}/src/Eigen)
         set( EIGEN3_INCLUDE_DIR Eigen)
     else()
         message( FATAL_ERROR "Please set the CMake variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation. E.g. cmake -DEIGEN3_INCLUDE_DIR=/path/to/eigen/dir")
