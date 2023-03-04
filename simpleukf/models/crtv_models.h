@@ -6,6 +6,6 @@
 #include "models_utils.h"
 
 static_assert(simpleukf::models_utils::is_augmented<simpleukf::models::CRTVModel<>>::value);
-static_assert(not simpleukf::models_utils::is_augmented<simpleukf::models::RadarModel<> >::value);
+static_assert(not simpleukf::models_utils::is_augmented<simpleukf::models::RadarModel<>>::value);
 
-#endif  // SIMPLEUKF_MODELS_CRTV_MODELS_H
+#endif  // SIMPLEUKF_MODELS_CRTV_MODELS_Hi

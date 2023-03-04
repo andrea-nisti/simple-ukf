@@ -22,14 +22,3 @@ cc_library(
        "@eigen_repo//:eigen"
     ]
 )
-
-cc_binary(
-    name = "ukf_main",
-    srcs = [
-        "ukf_main.cpp",
-    ],
-    deps = [
-       "//simpleukf/models:crtv_models",
-       ":ukf",
-    ],
-)

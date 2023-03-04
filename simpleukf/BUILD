@@ -1,10 +1,13 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 package(default_visibility = ["//visibility:public"])
 
 cc_binary(
-    name = "KalmanMono",
-    srcs = ["main0.cpp"],
+    name = "main_ukf",
+    srcs = [
+        "main_ukf.cpp",
+    ],
     deps = [
-       "@eigen_repo//:eigen",
+       "//simpleukf/models:crtv_models",
+       "//simpleukf/ukf:ukf",
     ],
 )

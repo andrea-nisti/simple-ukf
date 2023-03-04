@@ -53,9 +53,9 @@ class UKF
     }
 
     template <typename MeasurementModel, typename... MeasurementPredictionArgs>
-    void UpdateState(const typename MeasurementModel::MeasurementVector& measure, MeasurementPredictionArgs&&... args)
+    void UpdateState(Eigen::Vector<double, MeasurementModel::n>& measure, MeasurementPredictionArgs&&... args)
     {
-        using MeasurementVector_t = typename MeasurementModel::MeasurementVector;
+        using MeasurementVector_t = typename Eigen::Vector<double, MeasurementModel::n>;
         using PredictedMeasurementSigmaPoints_t =
             ukf_utils::PredictedSigmaMatrix<MeasurementModel, ProcessModel::n_sigma_points>;
 
@@ -130,4 +130,4 @@ class UKF
 
 }  // namespace simpleukf::ukf
 
-#endif  // SIMPLEUKF_UKF_UKF_H
+#endif // SIMPLEUKF_UKF_UKF_H
