@@ -61,16 +61,16 @@ class UKF
 
         PredictedMeasurementSigmaPoints_t predicted_measurement_sigma_points{};
 
-        const auto prediction = PredictMeasurement<MeasurementModel>(
+        const auto measurement_prediction = PredictMeasurement<MeasurementModel>(
             predicted_measurement_sigma_points, std::forward<const MeasurementPredictionArgs>(args)...);
 
-        // create matrix for cross correlation: predicted measurement `prediction.mean` and pred covariance
-        // `prediction.covariance`
+        // create matrix for cross correlation: predicted measurement `measurement_prediction.mean` and pred covariance
+        // `measurement_prediction.covariance`
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> cross_correlation_matrix{};
         cross_correlation_matrix.fill(0.0f);
         for (int i = 0; i < ProcessModel::n_sigma_points; ++i)
         {
-            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - prediction.mean;
+            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measurement_prediction.mean;
             MeasurementModel::Adjust(measure_diff);
 
             StateVector_t x_diff = current_predicted_sigma_points_.col(i) - current_state_;
@@ -81,17 +81,17 @@ class UKF
 
         // Kalman gain K;
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K =
-            cross_correlation_matrix * prediction.covariance.inverse();
+            cross_correlation_matrix * measurement_prediction.covariance.inverse();
 
         // residual
-        MeasurementVector_t measure_diff = measure - prediction.mean;
+        MeasurementVector_t measure_diff = measure - measurement_prediction.mean;
 
         // angle normalization
         MeasurementModel::Adjust(measure_diff);
 
         // update state mean and covariance matrix
         current_state_ = current_state_ + K * measure_diff;
-        current_cov_ = current_cov_ - K * prediction.covariance * K.transpose();
+        current_cov_ = current_cov_ - K * measurement_prediction.covariance * K.transpose();
     }
 
     const PredictedProcessSigmaMatrix_t& GetCurrentPredictedSigmaMatrix() const
@@ -108,16 +108,16 @@ class UKF
         ukf_utils::PredictedSigmaMatrix<MeasurementModel, ProcessModel::n_sigma_points>& predicted_sigma_matrix_out,
         MeasurementPredictionArgs&&... args)
     {
-        auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<MeasurementModel>(
+        auto measurement_prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<MeasurementModel>(
             predicted_sigma_matrix_out,
             current_predicted_sigma_points_,
             weights_,
             std::forward<const MeasurementPredictionArgs>(args)...);
 
         // add measurement noise covariance matrix
-        prediction.covariance += MeasurementModel::noise_matrix_squared;
+        measurement_prediction.covariance += MeasurementModel::noise_matrix_squared;
 
-        return prediction;
+        return measurement_prediction;
     }
 
     static constexpr double lambda_ = ProcessModel::GetLambda();

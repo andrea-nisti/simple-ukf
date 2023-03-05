@@ -3,15 +3,13 @@
 
 #include <Eigen/Dense>
 
-namespace
-{
+
 struct ProcessNoiseConstantDefault
 {
     static constexpr double nu_a = 0.2;
     static constexpr double nu_psi_dd = 0.2;
 };
 
-}  // namespace
 namespace simpleukf::models
 {
 

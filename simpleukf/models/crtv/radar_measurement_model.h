@@ -5,9 +5,6 @@
 
 #include <Eigen/Dense>
 
-namespace
-{
-
 struct RadarNoiseConstantDefault
 {
     static constexpr double std_radr = 0.3;
@@ -15,7 +12,6 @@ struct RadarNoiseConstantDefault
     static constexpr double std_radrd = 0.1;
 };
 
-}  // namespace
 namespace simpleukf::models
 {
 
