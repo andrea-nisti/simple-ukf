@@ -33,5 +33,4 @@ message(STATUS "T Include dirs for simpleukf: ${PROJECT_SOURCE_DIR}")
 target_include_directories(simpleukf INTERFACE ${PROJECT_SOURCE_DIR}) # to maintain bazel include convention (e.g. includes are relative to root folder)
 
 add_executable (ukf_main simpleukf/ukf/ukf_main.cpp)
-# target_include_directories(ukf_main)
 target_link_libraries(ukf_main PRIVATE simpleukf)

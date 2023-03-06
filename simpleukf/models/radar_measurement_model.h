@@ -1,8 +1,6 @@
 #ifndef SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
 #define SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
 
-#include "crtv_model.h"
-
 #include <Eigen/Dense>
 
 struct RadarNoiseConstantDefault
@@ -83,4 +81,4 @@ class RadarModel
 
 }  // namespace simpleukf::models
 
-#endif // SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
+#endif  // SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H

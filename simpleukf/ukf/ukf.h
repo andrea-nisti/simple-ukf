@@ -130,4 +130,4 @@ class UKF
 
 }  // namespace simpleukf::ukf
 
-#endif // SIMPLEUKF_UKF_UKF_H
+#endif  // SIMPLEUKF_UKF_UKF_H

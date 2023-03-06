@@ -4,8 +4,8 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "crtv_models",
     srcs = [
-        "crtv/crtv_model.h",
-        "crtv/radar_measurement_model.h"
+        "crtv_model.h",
+        "radar_measurement_model.h"
     ],
     hdrs = ["crtv_models.h"],
     deps = [
@@ -18,5 +18,12 @@ cc_library(
     name = "models_utils",
     srcs = [
         "models_utils.h",
+    ]
+)
+
+cc_library(
+    name = "models_strategies",
+    srcs = [
+        "linear_update_strategy.h",
     ]
 )
