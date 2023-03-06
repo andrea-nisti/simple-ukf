@@ -66,18 +66,14 @@ class UKF
 
         // create matrix for cross correlation: predicted measurement `measurement_prediction.mean` and pred covariance
         // `measurement_prediction.covariance`
-        Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> cross_correlation_matrix{};
-        cross_correlation_matrix.fill(0.0f);
-        for (int i = 0; i < ProcessModel::n_sigma_points; ++i)
-        {
-            MeasurementVector_t measure_diff = predicted_measurement_sigma_points.col(i) - measurement_prediction.mean;
-            MeasurementModel::Adjust(measure_diff);
 
-            StateVector_t x_diff = current_predicted_sigma_points_.col(i) - current_state_;
-            ProcessModel::Adjust(x_diff);
-
-            cross_correlation_matrix = cross_correlation_matrix + weights_(i) * x_diff * measure_diff.transpose();
-        }
+        const auto cross_correlation_matrix =
+            ukf_utils::ComputeCrossCorrelation<ProcessModel, MeasurementModel, ProcessModel::n_sigma_points>(
+                current_predicted_sigma_points_,
+                current_state_,
+                predicted_measurement_sigma_points,
+                measurement_prediction.mean,
+                weights_);
 
         // Kalman gain K;
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K =
@@ -123,6 +119,8 @@ class UKF
     static constexpr double lambda_ = ProcessModel::GetLambda();
     const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_ = ProcessModel::GenerateWeights();
 
+    ukf_utils::MeanAndCovariance<ProcessModel> current_hypotesis_{};
+    
     StateVector_t current_state_{};
     StateCovMatrix_t current_cov_{};
     PredictedProcessSigmaMatrix_t current_predicted_sigma_points_{};

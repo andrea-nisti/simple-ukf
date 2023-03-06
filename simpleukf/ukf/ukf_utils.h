@@ -2,6 +2,7 @@
 #define SIMPLEUKF_UKF_UKF_UTILS_H
 
 #include <iostream>
+#include <optional>
 
 #include <Eigen/Dense>
 
@@ -168,6 +169,29 @@ MeanAndCovariance<PredictionModel> PredictMeanAndCovarianceFromSigmaPoints(
         weights, predicted_sigma_matrix_out, predicted_state, &PredictionModel::Adjust);
 
     return {predicted_state, predicted_cov};
+}
+
+template <typename ModelA, typename ModelB, int n_sigma_points>
+Eigen::Matrix<double, ModelA::n, ModelB::n> ComputeCrossCorrelation(
+    Eigen::Matrix<double, ModelA::n, n_sigma_points>& matrix_a,
+    const typename ModelA::PredictedVector& mean_a,
+    Eigen::Matrix<double, ModelB::n, n_sigma_points>& matrix_b,
+    const typename ModelB::PredictedVector& mean_b,
+    const Eigen::Vector<double, n_sigma_points> weights)
+{
+    Eigen::Matrix<double, ModelA::n, ModelB::n> cross_correlation_matrix{};
+    cross_correlation_matrix.fill(0.0f);
+    for (int i = 0; i < n_sigma_points; ++i)
+    {
+        typename ModelA::PredictedVector diff_a = matrix_a.col(i) - mean_a;
+        ModelA::Adjust(diff_a);
+
+        typename ModelB::PredictedVector diff_b = matrix_b.col(i) - mean_b;
+        ModelB::Adjust(diff_b);
+
+        cross_correlation_matrix = cross_correlation_matrix + weights(i) * diff_a * diff_b.transpose();
+    }
+    return cross_correlation_matrix;
 }
 
 }  // namespace simpleukf::ukf_utils
