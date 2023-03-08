@@ -9,8 +9,8 @@ namespace simpleukf::testing
 
 struct MeasureMock
 {
-    using PredictedVector = Eigen::Vector<double, 2>;
     static constexpr int n = 2;
+    using PredictedVector = Eigen::Vector<double, n>;
 
     PredictedVector Predict(const simpleukf::models::CRTVModel<>::PredictedVector& curr_state) const
     {
