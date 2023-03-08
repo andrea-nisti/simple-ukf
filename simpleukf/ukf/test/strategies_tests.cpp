@@ -38,7 +38,7 @@ TEST(LinearUpdateStrategy, GivenParameters_ExpectUpdate)
     current_state.mean = {0.5f, 0.3f, 0.0f, 0.0f, 0.0f};
     current_state.covariance = simpleukf::models::CRTVModel<>::StateCovMatrix::Identity();
 
-    auto strategy = LinearUpdateStrategy<CRTVModel<>, MeasureMock>{H};
+    auto strategy = ukf::LinearUpdateStrategy<CRTVModel<>, MeasureMock>{H};
     simpleukf::ukf_utils::MeanAndCovariance<CRTVModel<>> new_state;
 
     strategy.Update(measure, current_state, new_state);
