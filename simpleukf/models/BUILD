@@ -20,11 +20,3 @@ cc_library(
         "models_utils.h",
     ]
 )
-
-cc_library(
-    name = "models_strategies",
-    srcs = [
-        "linear_update_strategy.h",
-    ],
-    deps = ["//simpleukf/ukf:ukf_utils"]
-)

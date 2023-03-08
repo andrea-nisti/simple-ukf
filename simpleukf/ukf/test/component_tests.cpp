@@ -2,11 +2,10 @@
 
 #include "simpleukf/models/crtv_models.h"
 #include "simpleukf/ukf/ukf.h"
+#include "test_utils.h"
 
-TEST(SimpleTest, AssertTrue)
+namespace simpleukf::testing
 {
-    EXPECT_TRUE(true);
-}
 
 TEST(UKFComponentTests, OnGivenInitialConditions_ExpectCorrectEstimation)
 {
@@ -42,13 +41,10 @@ TEST(UKFComponentTests, OnGivenInitialConditions_ExpectCorrectEstimation)
     instance.UpdateState<RadarModel>(z);
 
     // then
-    auto expected = CRTVModel::PredictedVector{ 5.92115, 1.41666, 2.15551, 0.48931, 0.31995};
+    auto expected = CRTVModel::PredictedVector{5.92115, 1.41666, 2.15551, 0.48931, 0.31995};
     const auto current_prediction = instance.GetCurrentStateVector();
-    for (int index = 0; index < expected.ColsAtCompileTime; ++index)
-    {
-        const auto current_element{current_prediction(index)};
-        const auto expected_element{expected(index)};
 
-        EXPECT_NEAR(current_element, expected_element, 0.00001f);
-    }
+    ExpectNearMatrixd(expected, current_prediction, 0.00001);
 }
+
+}  // namespace simpleukf::testing
