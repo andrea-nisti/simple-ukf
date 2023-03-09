@@ -7,7 +7,7 @@ cc_binary(
         "main_ukf.cpp",
     ],
     deps = [
-       "//simpleukf/models:crtv_models",
+       "//simpleukf/models:ctrv_models",
        "//simpleukf/ukf:ukf",
     ],
 )

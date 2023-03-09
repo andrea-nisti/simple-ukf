@@ -7,7 +7,7 @@ cc_test(
   srcs = ["component_tests.cpp"],
   deps = [
     "@gtest//:gtest_main",
-    "//simpleukf/models:crtv_models",
+    "//simpleukf/models:ctrv_models",
     "//simpleukf/ukf:ukf",
     ":test_utils"
   ],
@@ -18,7 +18,7 @@ cc_test(
   srcs = ["strategies_tests.cpp"],
   deps = [
     "@gtest//:gtest_main",
-    "//simpleukf/models:crtv_models",
+    "//simpleukf/models:ctrv_models",
     "//simpleukf/ukf:ukf",
     ":test_utils"
   ],

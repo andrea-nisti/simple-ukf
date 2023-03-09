@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "simpleukf/models/crtv_models.h"
+#include "simpleukf/models/ctrv_models.h"
 #include "simpleukf/ukf/linear_update_strategy.h"
 #include "simpleukf/ukf/unscented_update_strategy.h"
 #include "test_utils.h"
@@ -13,7 +13,7 @@ struct MeasureMock
     static constexpr int n = 2;
     using PredictedVector = Eigen::Vector<double, n>;
 
-    PredictedVector Predict(const simpleukf::models::CRTVModel<>::PredictedVector& curr_state) const
+    PredictedVector Predict(const simpleukf::models::CTRVModel<>::PredictedVector& curr_state) const
     {
         PredictedVector ret{curr_state(0), curr_state(1)};
         return ret;
@@ -35,15 +35,15 @@ TEST(LinearUpdateStrategy, GivenParameters_ExpectUpdate)
          0, 1, 0, 0, 0;
     // clang-format on
 
-    simpleukf::ukf_utils::MeanAndCovariance<CRTVModel<>> current_state;
+    simpleukf::ukf_utils::MeanAndCovariance<CTRVModel<>> current_state;
     current_state.mean = {0.5f, 0.3f, 0.0f, 0.0f, 0.0f};
-    current_state.covariance = simpleukf::models::CRTVModel<>::StateCovMatrix::Identity();
+    current_state.covariance = simpleukf::models::CTRVModel<>::StateCovMatrix::Identity();
 
-    auto strategy = ukf::LinearUpdateStrategy<CRTVModel<>, MeasureMock>{H};
-    simpleukf::ukf_utils::MeanAndCovariance<CRTVModel<>> new_state;
+    auto strategy = ukf::LinearUpdateStrategy<CTRVModel<>, MeasureMock>{H};
+    simpleukf::ukf_utils::MeanAndCovariance<CTRVModel<>> new_state;
 
     strategy.Update(measure, current_state, new_state);
-    CRTVModel<>::PredictedVector expected_state{0.954545, 0.481818, 0, 0, 0};
+    CTRVModel<>::PredictedVector expected_state{0.954545, 0.481818, 0, 0, 0};
 
     ExpectNearMatrixd(expected_state, new_state.mean, 0.0001f);
 }
@@ -51,10 +51,10 @@ TEST(LinearUpdateStrategy, GivenParameters_ExpectUpdate)
 TEST(UnscentedUpdateStrategy, GivenParameters_ExpectUpdate)
 {
     using namespace simpleukf::models;
-    using PredictedProcessSigmaMatrix_t = ukf_utils::PredictedSigmaMatrix<CRTVModel<>, CRTVModel<>::n_sigma_points>;
+    using PredictedProcessSigmaMatrix_t = ukf_utils::PredictedSigmaMatrix<CTRVModel<>, CTRVModel<>::n_sigma_points>;
 
     // clang-format off
-    simpleukf::ukf_utils::MeanAndCovariance<CRTVModel<>> current_state;
+    simpleukf::ukf_utils::MeanAndCovariance<CTRVModel<>> current_state;
     current_state.mean << 5.93446, 1.48886, 2.2049, 0.53678, 0.3528;
 
     current_state.covariance <<  
@@ -79,7 +79,7 @@ TEST(UnscentedUpdateStrategy, GivenParameters_ExpectUpdate)
         2.0062   // rho_dot in m/s};
     };
 
-    CRTVModel<>::PredictedVector expected_state = {
+    CTRVModel<>::PredictedVector expected_state = {
         5.92115,
         1.41666,
         2.15551,
@@ -87,9 +87,9 @@ TEST(UnscentedUpdateStrategy, GivenParameters_ExpectUpdate)
         0.31995
     };
     // clang-format on
-    const auto weights = CRTVModel<>::GenerateWeights();
-    auto strategy = ukf::UnscentedUpdateStrategy<CRTVModel<>, RadarModel<>>{predicted_sigma_matrix, weights};
-    simpleukf::ukf_utils::MeanAndCovariance<CRTVModel<>> new_state;
+
+    auto strategy = ukf::UnscentedUpdateStrategy<CTRVModel<>, RadarModel<>>{predicted_sigma_matrix};
+    simpleukf::ukf_utils::MeanAndCovariance<CTRVModel<>> new_state;
 
     strategy.Update(measure, current_state, new_state);
     ExpectNearMatrixd(expected_state, new_state.mean, 0.00001f);

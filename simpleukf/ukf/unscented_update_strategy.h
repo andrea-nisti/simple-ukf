@@ -13,9 +13,8 @@ class UnscentedUpdateStrategy
   public:
     UnscentedUpdateStrategy(
         const Eigen::Ref<const ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>>&
-            current_predicted_sigma_points,
-        const Eigen::Ref<const Eigen::Vector<double, ProcessModel::n_sigma_points>>& weights)
-        : current_predicted_sigma_points_{current_predicted_sigma_points}, weights_{weights}
+            current_predicted_sigma_points)
+        : current_predicted_sigma_points_{current_predicted_sigma_points}
     {
     }
 
@@ -62,7 +61,7 @@ class UnscentedUpdateStrategy
   private:
     // TODO: should we keep a copy or not?
     const ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points> current_predicted_sigma_points_;
-    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_;
+    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_ = ProcessModel::GenerateWeights();
 };
 
 }  // namespace simpleukf::ukf

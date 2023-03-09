@@ -1,5 +1,5 @@
-#ifndef SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
-#define SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
+#ifndef SIMPLEUKF_MODELS_CTRV_RADAR_MEASUREMENT_MODEL_H
+#define SIMPLEUKF_MODELS_CTRV_RADAR_MEASUREMENT_MODEL_H
 
 #include <Eigen/Dense>
 
@@ -17,7 +17,7 @@ template <typename NoiseConstants = RadarNoiseConstantDefault>
 class RadarModel
 {
   private:
-    using CRTVModelInt = CRTVModel<>;
+    using CTRVModelInt = CTRVModel<>;
 
   public:
     static constexpr int n = 3;
@@ -46,10 +46,10 @@ class RadarModel
     using PredictedVector = MeasurementVector;
     using PredictedCovMatrix = MeasurementCovMatrix;
 
-    static MeasurementVector Predict(const CRTVModelInt::StateVector& current_state)
+    static MeasurementVector Predict(const CTRVModelInt::StateVector& current_state)
     {
-        static_assert(current_state.RowsAtCompileTime == CRTVModelInt::n,
-                      "Input state dimension must be equal to CRTV state size.");
+        static_assert(current_state.RowsAtCompileTime == CTRVModelInt::n,
+                      "Input state dimension must be equal to CTRV state size.");
 
         // extract values for better readability
         double p_x = current_state(0);
@@ -81,4 +81,4 @@ class RadarModel
 
 }  // namespace simpleukf::models
 
-#endif  // SIMPLEUKF_MODELS_CRTV_RADAR_MEASUREMENT_MODEL_H
+#endif  // SIMPLEUKF_MODELS_CTRV_RADAR_MEASUREMENT_MODEL_H

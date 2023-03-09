@@ -1,5 +1,5 @@
-#ifndef SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
-#define SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
+#ifndef SIMPLEUKF_MODELS_CTRV_CTRV_MODEL_H
+#define SIMPLEUKF_MODELS_CTRV_CTRV_MODEL_H
 
 #include <Eigen/Dense>
 
@@ -14,7 +14,7 @@ namespace simpleukf::models
 {
 
 template <typename ProcessNoise = ProcessNoiseConstantDefault>
-class CRTVModel
+class CTRVModel
 {
   public:
     static constexpr int n = 5;
@@ -119,4 +119,4 @@ class CRTVModel
 
 }  // namespace simpleukf::models
 
-#endif  // SIMPLEUKF_MODELS_CRTV_CRTV_MODEL_H
+#endif  // SIMPLEUKF_MODELS_CTRV_CTRV_MODEL_H
