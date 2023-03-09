@@ -32,5 +32,5 @@ target_link_libraries(simpleukf INTERFACE models eigen)
 message(STATUS "T Include dirs for simpleukf: ${PROJECT_SOURCE_DIR}")
 target_include_directories(simpleukf INTERFACE ${PROJECT_SOURCE_DIR}) # to maintain bazel include convention (e.g. includes are relative to root folder)
 
-add_executable (ukf_main simpleukf/ukf/ukf_main.cpp)
-target_link_libraries(ukf_main PRIVATE simpleukf)
+add_executable (main_ukf simpleukf/examples/main_ukf.cpp)
+target_link_libraries(main_ukf PRIVATE simpleukf)
