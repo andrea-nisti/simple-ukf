@@ -12,16 +12,16 @@ class UnscentedUpdateStrategy
 {
   public:
     UnscentedUpdateStrategy(
-        const Eigen::Ref<ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>>
+        const Eigen::Ref<const ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>>&
             current_predicted_sigma_points,
-        const Eigen::Ref<Eigen::Vector<double, ProcessModel::n_sigma_points>> weights)
+        const Eigen::Ref<const Eigen::Vector<double, ProcessModel::n_sigma_points>>& weights)
         : current_predicted_sigma_points_{current_predicted_sigma_points}, weights_{weights}
     {
     }
 
-    void Update(const Eigen::Ref<typename MeasurementModel::PredictedVector>& measure,
+    void Update(const Eigen::Ref<const typename MeasurementModel::PredictedVector>& measure,
                 const simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& current_hypotesis,
-                simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& mean_and_cov_out)
+                simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& mean_and_cov_out) const
     {
         simpleukf::ukf_utils::PredictedSigmaMatrix<MeasurementModel, ProcessModel::n_sigma_points>
             measurement_predicted_sigma_matrix_out;
@@ -61,8 +61,8 @@ class UnscentedUpdateStrategy
 
   private:
     // TODO: should we keep a copy or not?
-    ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points> current_predicted_sigma_points_;
-    Eigen::Vector<double, ProcessModel::n_sigma_points> weights_;
+    const ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points> current_predicted_sigma_points_;
+    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_;
 };
 
 }  // namespace simpleukf::ukf

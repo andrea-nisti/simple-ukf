@@ -173,9 +173,9 @@ MeanAndCovariance<PredictionModel> PredictMeanAndCovarianceFromSigmaPoints(
 
 template <typename ModelA, typename ModelB, int n_sigma_points>
 Eigen::Matrix<double, ModelA::n, ModelB::n> ComputeCrossCorrelation(
-    Eigen::Matrix<double, ModelA::n, n_sigma_points>& matrix_a,
+    const Eigen::Matrix<double, ModelA::n, n_sigma_points>& matrix_a,
     const typename ModelA::PredictedVector& mean_a,
-    Eigen::Matrix<double, ModelB::n, n_sigma_points>& matrix_b,
+    const Eigen::Matrix<double, ModelB::n, n_sigma_points>& matrix_b,
     const typename ModelB::PredictedVector& mean_b,
     const Eigen::Vector<double, n_sigma_points> weights)
 {
