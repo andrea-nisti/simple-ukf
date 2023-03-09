@@ -1,6 +1,7 @@
 #ifndef SIMPLEUKF_UKF_LINEAR_UPDATE_STRATEGY_H
 #define SIMPLEUKF_UKF_LINEAR_UPDATE_STRATEGY_H
 
+#include "simpleukf/models/models_utils.h"
 #include "simpleukf/ukf/ukf_utils.h"
 
 namespace simpleukf::ukf
@@ -16,7 +17,9 @@ class LinearUpdateStrategy
                 simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& mean_and_cov_out)
     {
         const auto measurement_prediction{measurement_model_.Predict(current_hypotesis.mean)};
-        const auto measurement_diff = measure - measurement_prediction;
+        typename MeasurementModel::PredictedVector measurement_diff = measure - measurement_prediction;
+
+        models_utils::AdjustIfNeeded<MeasurementModel>(measurement_diff);
 
         const auto PHt = current_hypotesis.covariance * H_.transpose();
         const auto S = H_ * PHt + decltype(measurement_model_)::noise_matrix_squared;

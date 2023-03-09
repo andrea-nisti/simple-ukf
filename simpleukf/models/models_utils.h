@@ -23,9 +23,20 @@ struct has_adjust_method : std::false_type
 };
 
 template <typename T>
-struct has_adjust_method<T, std::void_t< decltype(T::Adjust(std::declval<T::PredictedVector>()))> > : std::true_type
+struct has_adjust_method<T, std::void_t<decltype(T::Adjust(std::declval<typename T::PredictedVector&>()))> >
+    : std::true_type
 {
 };
+
+template <typename MeasurementModel>
+void AdjustIfNeeded(typename MeasurementModel::PredictedVector& to_be_adjusted)
+{
+    if constexpr (has_adjust_method<MeasurementModel>::value)
+    {
+        // adjust the measure difference if needed: e.g. angle wrapping
+        MeasurementModel::Adjust(to_be_adjusted);
+    }
+}
 
 }  // namespace simpleukf::models_utils
 

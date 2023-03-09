@@ -12,9 +12,9 @@ class UnscentedUpdateStrategy
 {
   public:
     UnscentedUpdateStrategy(
-        const Eigen::Ref<ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>>&
+        const Eigen::Ref<ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points>>
             current_predicted_sigma_points,
-        const Eigen::Ref<Eigen::Vector<double, ProcessModel::n_sigma_points>>& weights)
+        const Eigen::Ref<Eigen::Vector<double, ProcessModel::n_sigma_points>> weights)
         : current_predicted_sigma_points_{current_predicted_sigma_points}, weights_{weights}
     {
     }
@@ -31,10 +31,7 @@ class UnscentedUpdateStrategy
         // std::forward<const MeasurementPredictionArgs>(args)...);
 
         // add measurement noise covariance matrix
-        if constexpr (not models_utils::is_augmented<MeasurementModel>)
-        {
-            measurement_prediction.covariance += MeasurementModel::noise_matrix_squared;
-        }
+        measurement_prediction.covariance += MeasurementModel::noise_matrix_squared;
 
         // create matrix for cross correlation: predicted measurement `measurement_prediction.mean` and pred covariance
         // `measurement_prediction.covariance`
@@ -51,21 +48,21 @@ class UnscentedUpdateStrategy
             cross_correlation_matrix * measurement_prediction.covariance.inverse();
 
         // residual
-        MeasurementVector_t measure_diff = measure - measurement_prediction.mean;
+        typename MeasurementModel::PredictedVector measure_diff = measure - measurement_prediction.mean;
 
         // angle normalization
-        MeasurementModel::Adjust(measure_diff);
+        models_utils::AdjustIfNeeded<MeasurementModel>(measure_diff);
 
         // update state mean and covariance matrix
         mean_and_cov_out.mean = current_hypotesis.mean + K * measure_diff;
-        mean_and_cov_out.covariance =  current_hypotesis.covariance - K * measurement_prediction.covariance * K.transpose();
+        mean_and_cov_out.covariance =
+            current_hypotesis.covariance - K * measurement_prediction.covariance * K.transpose();
     }
 
   private:
-    MeasurementModel measurement_model_{};
-
-    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_;
-    const ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points> current_predicted_sigma_points_;
+    // TODO: should we keep a copy or not?
+    ukf_utils::PredictedSigmaMatrix<ProcessModel, ProcessModel::n_sigma_points> current_predicted_sigma_points_;
+    Eigen::Vector<double, ProcessModel::n_sigma_points> weights_;
 };
 
 }  // namespace simpleukf::ukf
