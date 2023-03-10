@@ -29,7 +29,7 @@ class UKF
     /**
      * Init Initializes Unscented Kalman filter
      */
-    void Init(const StateVector_t& init_state, const StateCovMatrix_t& init_cov_matrix)
+    void Init(const Eigen::Ref<const StateVector_t>& init_state, const Eigen::Ref<const StateCovMatrix_t>& init_cov_matrix)
     {
         // set example state
         current_hypotesis_.mean = init_state;
