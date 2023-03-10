@@ -2,6 +2,7 @@
 
 #include "simpleukf/models/ctrv_models.h"
 #include "simpleukf/ukf/ukf.h"
+#include "simpleukf/ukf/unscented_update_strategy.h"
 
 int main()
 {
@@ -42,7 +43,8 @@ int main()
         0.2187,   // phi in rad
         2.0062;   // rho_dot in m/s
 
-    instance.UpdateState<RadarModel>(z);
+    auto strategy = UnscentedUpdateStrategy<CTRVModel, RadarModel>{instance.GetCurrentPredictedSigmaMatrix()};
+    instance.UpdateState<RadarModel>(z, strategy);
     std::cout << "Predicted state" << std::endl;
     std::cout << instance.GetCurrentStateVector() << std::endl;
     std::cout << "Predicted covariance matrix" << std::endl;

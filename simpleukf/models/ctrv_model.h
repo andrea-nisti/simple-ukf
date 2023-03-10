@@ -3,7 +3,6 @@
 
 #include <Eigen/Dense>
 
-
 struct ProcessNoiseConstantDefault
 {
     static constexpr double nu_a = 0.2;
