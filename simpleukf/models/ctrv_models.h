@@ -4,6 +4,7 @@
 #include "ctrv_model.h"
 #include "models_utils.h"
 #include "radar_measurement_model.h"
+#include "lidar_measurement_model.h"
 
 static_assert(simpleukf::models_utils::is_augmented<simpleukf::models::CTRVModel<>>::value);
 static_assert(not simpleukf::models_utils::is_augmented<simpleukf::models::RadarModel<>>::value);

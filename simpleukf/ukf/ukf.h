@@ -53,7 +53,7 @@ class UKF
     }
 
     template <typename MeasurementModel, typename MeasureUpdateStrategy, typename... MeasurementPredictionArgs>
-    void UpdateState(Eigen::Vector<double, MeasurementModel::n>& measure,
+    void UpdateState(const Eigen::Ref<const Eigen::Vector<double, MeasurementModel::n>>& measure,
                      MeasureUpdateStrategy&& measurement_update_strategy,
                      MeasurementPredictionArgs&&... args)
     {
