@@ -38,7 +38,7 @@ struct LidarModel
     // clang-format on
     using MeasurementCovMatrix = PredictedCovMatrix;
 
-    PredictedVector Predict(CTRVModelInt::PredictedVector& curr_state) const
+    PredictedVector Predict(const CTRVModelInt::PredictedVector& curr_state) const
     {
         PredictedVector ret{curr_state(0), curr_state(1)};
         return ret;

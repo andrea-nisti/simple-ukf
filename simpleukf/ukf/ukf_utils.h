@@ -155,7 +155,7 @@ MeanAndCovariance<PredictionModel> PredictMeanAndCovarianceFromSigmaPoints(
     PredictedSigmaMatrix<PredictionModel, InputSigmaMatrix::ColsAtCompileTime>& predicted_sigma_matrix_out,
     const InputSigmaMatrix& current_sigma_points,
     const Eigen::Vector<double, InputSigmaMatrix::ColsAtCompileTime> weights,
-    PredictionArgs&&... args)
+    const PredictionArgs... args)
 {
     // Predict sigma points
     predicted_sigma_matrix_out.fill(0.0f);

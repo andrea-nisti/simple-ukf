@@ -37,7 +37,7 @@ class UKF
     }
 
     template <typename... PredictionArgs>
-    void PredictProcessMeanAndCovariance(PredictionArgs&&... args)
+    void PredictProcessMeanAndCovariance(PredictionArgs... args)
     {
         auto augmented_sigma_points = ukf_utils::AugmentedSigmaPoints(
             current_hypotesis_.mean, current_hypotesis_.covariance, lambda_, ProcessModel::noise_matrix_squared);
@@ -46,7 +46,7 @@ class UKF
             current_predicted_sigma_points_,
             augmented_sigma_points,
             weights_,
-            std::forward<const PredictionArgs>(args)...);
+            std::forward<PredictionArgs>(args)...);
 
         current_hypotesis_.mean = prediction.mean;
         current_hypotesis_.covariance = prediction.covariance;
@@ -54,8 +54,7 @@ class UKF
 
     template <typename MeasurementModel, typename MeasureUpdateStrategy, typename... MeasurementPredictionArgs>
     void UpdateState(const Eigen::Ref<const Eigen::Vector<double, MeasurementModel::n>>& measure,
-                     MeasureUpdateStrategy&& measurement_update_strategy,
-                     MeasurementPredictionArgs&&... args)
+                     MeasureUpdateStrategy&& measurement_update_strategy)
     {
         measurement_update_strategy.Update(measure, current_hypotesis_, current_hypotesis_);
     }
@@ -64,12 +63,21 @@ class UKF
     {
         return current_predicted_sigma_points_;
     }
+
     const StateVector_t& GetCurrentStateVector() const { return current_hypotesis_.mean; }
     const StateCovMatrix_t& GetCurrentCovarianceMatrix() const { return current_hypotesis_.covariance; }
 
+    UKF<ProcessModel>& operator=(const UKF<ProcessModel>& right){
+        current_hypotesis_.mean = right.GetCurrentStateVector();
+        current_hypotesis_.covariance = right.GetCurrentCovarianceMatrix();
+        current_predicted_sigma_points_ = right.GetCurrentPredictedSigmaMatrix();
+
+        return *this;
+    };
+
   private:
-    static constexpr double lambda_ = ProcessModel::GetLambda();
-    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_ = ProcessModel::GenerateWeights();
+    static constexpr double lambda_{ProcessModel::GetLambda()};
+    const Eigen::Vector<double, ProcessModel::n_sigma_points> weights_{ProcessModel::GenerateWeights()};
 
     ukf_utils::MeanAndCovariance<ProcessModel> current_hypotesis_{};
     PredictedProcessSigmaMatrix_t current_predicted_sigma_points_{};
