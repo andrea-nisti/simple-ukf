@@ -12,7 +12,7 @@ class LinearUpdateStrategy
   public:
     LinearUpdateStrategy(const Eigen::Ref<const Eigen::Matrix<double, MeasurementModel::n, ProcessModel::n>>& H) : H_{H} {}
 
-    void Update(const Eigen::Ref<const typename MeasurementModel::PredictedVector> measure,
+    void Update(const typename MeasurementModel::PredictedVector measure,
                 const simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& current_hypotesis,
                 simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& mean_and_cov_out)
     {

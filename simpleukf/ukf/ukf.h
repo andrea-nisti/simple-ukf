@@ -29,31 +29,32 @@ class UKF
     /**
      * Init Initializes Unscented Kalman filter
      */
-    void Init(const Eigen::Ref<const StateVector_t>& init_state, const Eigen::Ref<const StateCovMatrix_t>& init_cov_matrix)
+    void Init(const StateVector_t& init_state, const StateCovMatrix_t& init_cov_matrix)
     {
         // set example state
         current_hypotesis_.mean = init_state;
         current_hypotesis_.covariance = init_cov_matrix;
     }
 
+    void printDT(double dt) { std::cout << dt << std::endl; }
+
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs... args)
     {
+        std::cout << GetCurrentStateVector() << std::endl;
+        std::cout << GetCurrentCovarianceMatrix() << std::endl;
         auto augmented_sigma_points = ukf_utils::AugmentedSigmaPoints(
-            current_hypotesis_.mean, current_hypotesis_.covariance, lambda_, ProcessModel::noise_matrix_squared);
+            GetCurrentStateVector(), GetCurrentCovarianceMatrix(), lambda_, ProcessModel::noise_matrix_squared);
 
         const auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
-            current_predicted_sigma_points_,
-            augmented_sigma_points,
-            weights_,
-            std::forward<PredictionArgs>(args)...);
+            current_predicted_sigma_points_, augmented_sigma_points, weights_, std::forward<PredictionArgs>(args)...);
 
         current_hypotesis_.mean = prediction.mean;
         current_hypotesis_.covariance = prediction.covariance;
     }
 
     template <typename MeasurementModel, typename MeasureUpdateStrategy, typename... MeasurementPredictionArgs>
-    void UpdateState(const Eigen::Ref<const Eigen::Vector<double, MeasurementModel::n>>& measure,
+    void UpdateState(const Eigen::Vector<double, MeasurementModel::n>& measure,
                      MeasureUpdateStrategy&& measurement_update_strategy)
     {
         measurement_update_strategy.Update(measure, current_hypotesis_, current_hypotesis_);
@@ -67,7 +68,8 @@ class UKF
     const StateVector_t& GetCurrentStateVector() const { return current_hypotesis_.mean; }
     const StateCovMatrix_t& GetCurrentCovarianceMatrix() const { return current_hypotesis_.covariance; }
 
-    UKF<ProcessModel>& operator=(const UKF<ProcessModel>& right){
+    UKF<ProcessModel>& operator=(const UKF<ProcessModel>& right)
+    {
         current_hypotesis_.mean = right.GetCurrentStateVector();
         current_hypotesis_.covariance = right.GetCurrentCovarianceMatrix();
         current_predicted_sigma_points_ = right.GetCurrentPredictedSigmaMatrix();

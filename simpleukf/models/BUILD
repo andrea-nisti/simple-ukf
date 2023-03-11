@@ -6,6 +6,7 @@ cc_library(
     srcs = [
         "ctrv_model.h",
         "radar_measurement_model.h",
+        "lidar_measurement_model.h"
     ],
     hdrs = ["ctrv_models.h"],
     deps = [

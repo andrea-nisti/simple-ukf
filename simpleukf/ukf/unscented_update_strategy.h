@@ -18,7 +18,7 @@ class UnscentedUpdateStrategy
     {
     }
 
-    void Update(const Eigen::Ref<const typename MeasurementModel::PredictedVector>& measure,
+    void Update(const typename MeasurementModel::PredictedVector& measure,
                 const simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& current_hypotesis,
                 simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& mean_and_cov_out) const
     {
@@ -46,13 +46,21 @@ class UnscentedUpdateStrategy
         Eigen::Matrix<double, ProcessModel::n, MeasurementModel::n> K =
             cross_correlation_matrix * measurement_prediction.covariance.inverse();
 
+        std::cout << "current_predicted_sigma_points_" << current_predicted_sigma_points_ << std::endl;
+        std::cout << "current_hypotesis.mean" << current_hypotesis.mean << std::endl;
+        std::cout << "measurement_predicted_sigma_matrix_out" << measurement_predicted_sigma_matrix_out << std::endl;
+        std::cout << " measurement_prediction.mean" << measurement_prediction.mean << std::endl;
+        std::cout << "cross_correlation_matrix" << cross_correlation_matrix << std::endl;
+        std::cout << "k gain" << K << std::endl;
+
+
         // residual
         typename MeasurementModel::PredictedVector measure_diff = measure - measurement_prediction.mean;
 
         // angle normalization
         models_utils::AdjustIfNeeded<MeasurementModel>(measure_diff);
 
-        // update state mean and covariance matrix
+        //update state mean and covariance matrix
         mean_and_cov_out.mean = current_hypotesis.mean + K * measure_diff;
         mean_and_cov_out.covariance =
             current_hypotesis.covariance - K * measurement_prediction.covariance * K.transpose();
