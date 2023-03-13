@@ -34,7 +34,7 @@ class CTRVModel
          ProcessNoise::nu_psi_dd* ProcessNoise::nu_psi_dd)
             .finished();
 
-    static inline constexpr double GetLambda() { return 3 - n_aug; };
+    static inline constexpr double GetLambda() { return 3 - n; };
     static constexpr auto GenerateWeights()
     {
         constexpr double lambda = GetLambda();
@@ -44,10 +44,8 @@ class CTRVModel
         double weight = 0.5 / (lambda + n_aug);
         weights(0) = weight_0;
 
-        for (int i = 1; i < n_sigma_points; ++i)
-        {
-            weights(i) = weight;
-        }
+        weights.fill(weight);
+        weights(0) = weight_0;
         return weights;
     }
 

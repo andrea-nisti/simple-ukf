@@ -21,9 +21,9 @@ class LinearUpdateStrategy
 
         models_utils::AdjustIfNeeded<MeasurementModel>(measurement_diff);
 
-        const auto PHt = current_hypotesis.covariance * H_.transpose();
-        const auto S = H_ * PHt + decltype(measurement_model_)::noise_matrix_squared;
-        const auto K = PHt * S.inverse();
+        const auto Ht = H_.transpose();
+        const auto S = H_ * current_hypotesis.covariance * Ht + decltype(measurement_model_)::noise_matrix_squared;
+        const auto K = current_hypotesis.covariance * Ht * S.inverse();
 
         const auto I = Eigen::Matrix<double, ProcessModel::n, ProcessModel::n>::Identity();
         mean_and_cov_out.mean = current_hypotesis.mean + K * measurement_diff;

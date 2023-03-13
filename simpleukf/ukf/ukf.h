@@ -34,18 +34,18 @@ class UKF
         // set example state
         current_hypotesis_.mean = init_state;
         current_hypotesis_.covariance = init_cov_matrix;
-    }
 
-    void printDT(double dt) { std::cout << dt << std::endl; }
+        for (int col = 0; col < ProcessModel::n_sigma_points; ++col)
+        {
+            current_predicted_sigma_points_.col(col) = init_state;
+        }
+    }
 
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs... args)
     {
-        std::cout << GetCurrentStateVector() << std::endl;
-        std::cout << GetCurrentCovarianceMatrix() << std::endl;
         auto augmented_sigma_points = ukf_utils::AugmentedSigmaPoints(
             GetCurrentStateVector(), GetCurrentCovarianceMatrix(), lambda_, ProcessModel::noise_matrix_squared);
-
         const auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
             current_predicted_sigma_points_, augmented_sigma_points, weights_, std::forward<PredictionArgs>(args)...);
 

@@ -22,8 +22,8 @@ struct LidarModel
     using CTRVModelInt = CTRVModel<>;
 
   public:
-    static constexpr double std_laspx = LidarNoiseConstantDefault::std_laspx;
-    static constexpr double std_laspy = LidarNoiseConstantDefault::std_laspy;
+    static constexpr double std_laspx = NoiseConstants::std_laspx;
+    static constexpr double std_laspy = NoiseConstants::std_laspy;
 
     static constexpr int n = 2;
     using PredictedVector = Eigen::Vector<double, n>;
