@@ -1,12 +1,13 @@
-#include <iostream>
 #include "utils.h"
+
+#include <iostream>
 
 using std::cout;
 using std::endl;
 
 MatrixXd CalculateJacobian(const VectorXd& x_state)
 {
-    MatrixXd Hj(3 , 4);
+    MatrixXd Hj(3, 4);
     // recover state parameters
     float px = x_state(0);
     float py = x_state(1);
@@ -26,23 +27,21 @@ MatrixXd CalculateJacobian(const VectorXd& x_state)
     }
 
     // compute the Jacobian matrix
-    Hj << (px / c2) , (py / c2) , 0 , 0 ,
-        -(py / c1) , (px / c1) , 0 , 0 ,
-        py* (vx * py - vy * px) / c3 , px* (px * vy - py * vx) / c3 , px / c2 , py / c2;
+    Hj << (px / c2), (py / c2), 0, 0, -(py / c1), (px / c1), 0, 0, py * (vx * py - vy * px) / c3,
+        px * (px * vy - py * vx) / c3, px / c2, py / c2;
 
     return Hj;
 }
 
-VectorXd CalculateRMSE(const std::vector<VectorXd>& estimations , const std::vector<VectorXd>& ground_truth)
+VectorXd CalculateRMSE(const std::vector<VectorXd>& estimations, const std::vector<VectorXd>& ground_truth)
 {
     VectorXd rmse(4);
-    rmse << 0 , 0 , 0 , 0;
+    rmse << 0, 0, 0, 0;
 
     // check the validity of the following inputs:
     //  * the estimation vector size should not be zero
     //  * the estimation vector size should equal ground truth vector size
-    if (estimations.size() != ground_truth.size()
-        || estimations.size() == 0)
+    if (estimations.size() != ground_truth.size() || estimations.size() == 0)
     {
         cout << "Invalid estimation or ground_truth data" << endl;
         return rmse;

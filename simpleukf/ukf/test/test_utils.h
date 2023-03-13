@@ -2,6 +2,7 @@
 #define SIMPLEUKF_UKF_TEST_TEST_UTILS_H
 
 #include <cassert>
+
 #include <gtest/gtest.h>
 
 namespace simpleukf::testing

@@ -8,12 +8,6 @@
 
 #include <Eigen/Dense>
 
-/* TODO:
-- make prediction independent from augmentation
-
-impovement
-- cache last fusion timestamp
-*/
 namespace simpleukf::ukf
 {
 
@@ -44,10 +38,32 @@ class UKF
     template <typename... PredictionArgs>
     void PredictProcessMeanAndCovariance(PredictionArgs... args)
     {
-        auto augmented_sigma_points = ukf_utils::AugmentedSigmaPoints(
-            GetCurrentStateVector(), GetCurrentCovarianceMatrix(), lambda_, ProcessModel::noise_matrix_squared);
-        const auto prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
-            current_predicted_sigma_points_, augmented_sigma_points, weights_, std::forward<PredictionArgs>(args)...);
+        ukf_utils::MeanAndCovariance<ProcessModel> prediction;
+        if constexpr (simpleukf::models_utils::is_augmented<ProcessModel>::value)
+        {
+            // Case where process model is augmented with noise values (NOTE: in augmented models, noise_matrix_squared
+            // is a vector with noise values)
+            auto augmented_sigma_points = ukf_utils::AugmentedSigmaPoints(
+                GetCurrentStateVector(), GetCurrentCovarianceMatrix(), lambda_, ProcessModel::noise_matrix_squared);
+
+            prediction =
+                ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(current_predicted_sigma_points_,
+                                                                                 augmented_sigma_points,
+                                                                                 weights_,
+                                                                                 std::forward<PredictionArgs>(args)...);
+        }
+        else
+        {
+            // Case where process model is NOT augmented with additive noise (NOTE: in non augmented models,
+            // noise_matrix_squared is a covariance matrix)
+            auto sigma_points = GenerateSigmaPoints(GetCurrentStateVector(), GetCurrentCovarianceMatrix(), lambda_);
+
+            prediction = ukf_utils::PredictMeanAndCovarianceFromSigmaPoints<ProcessModel>(
+                current_predicted_sigma_points_, sigma_points, weights_, std::forward<PredictionArgs>(args)...);
+
+            // Additive noise
+            current_hypotesis_.covariance += ProcessModel::noise_matrix_squared;
+        }
 
         current_hypotesis_.mean = prediction.mean;
         current_hypotesis_.covariance = prediction.covariance;

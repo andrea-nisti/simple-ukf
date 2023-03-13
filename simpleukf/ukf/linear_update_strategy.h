@@ -10,7 +10,9 @@ template <typename ProcessModel, typename MeasurementModel>
 class LinearUpdateStrategy
 {
   public:
-    LinearUpdateStrategy(const Eigen::Ref<const Eigen::Matrix<double, MeasurementModel::n, ProcessModel::n>>& H) : H_{H} {}
+    LinearUpdateStrategy(const Eigen::Ref<const Eigen::Matrix<double, MeasurementModel::n, ProcessModel::n>>& H) : H_{H}
+    {
+    }
 
     void Update(const typename MeasurementModel::PredictedVector measure,
                 const simpleukf::ukf_utils::MeanAndCovariance<ProcessModel>& current_hypotesis,
