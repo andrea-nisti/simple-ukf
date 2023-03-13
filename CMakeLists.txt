@@ -5,7 +5,7 @@ set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
 project(ukf)
-
+message(STATUS "Project SourceDIR ${PROJECT_SOURCE_DIR}")
 ## Simple workaround to make Eigen work with Udacity repo
 if( NOT DEFINED EIGEN3_INCLUDE_DIR )
     message(STATUS "Checking for eigen in  ${CMAKE_SOURCE_DIR}/src")
